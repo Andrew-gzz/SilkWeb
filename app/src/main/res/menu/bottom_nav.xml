@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="Inicio"
+        android:id="@+id/id_home"
+        android:icon="@drawable/ic_home"/>
+    <item android:title="Buscar"
+        android:id="@+id/id_search"
+        android:icon="@drawable/ic_search"/>
+    <item android:title="Publicar"
+        android:id="@+id/id_add"
+        android:icon="@drawable/ic_add"/>
+    <item android:title="Guardados"
+        android:id="@+id/id_bookmarks"
+        android:icon="@drawable/ic_bookmarks"/>
+    <item android:title="Perfil"
+        android:id="@+id/id_profile"
+        android:icon="@drawable/ic_profile"/>
+</menu>
