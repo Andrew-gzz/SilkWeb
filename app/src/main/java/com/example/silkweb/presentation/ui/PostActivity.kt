@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.silkweb.R
 import com.google.android.material.button.MaterialButton
 
+//Mensaje de prueba
 class PostActivity : AppCompatActivity() {
 
     private lateinit var imageContainer: LinearLayout
