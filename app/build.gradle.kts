@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -41,6 +42,8 @@ android {
 }
 
 dependencies {
+    val room_version = "2.8.1"
+    val fragment_version = "1.8.9"
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -59,6 +62,14 @@ dependencies {
     implementation(files("libs/mysql-connector-java-5.1.49.jar"))
     //Libreria de utilidades
     implementation(libs.libreria.pcs)
+
+    //Libreria de Room para la base de datos local
+    implementation("androidx.room:room-runtime:$room_version")
+    annotationProcessor("androidx.room:room-compiler:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
+
+    //Para manejar fragments
+    implementation("androidx.fragment:fragment-ktx:$fragment_version")
 
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)

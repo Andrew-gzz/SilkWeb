@@ -30,13 +30,64 @@
             android:padding="24dp">
 
             <TextView
+                android:id="@+id/id_tvTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="Iniciar Sesión"
-                android:textColor="@color/primaryDark"
+                android:textColor="@color/primary"
                 android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                />
+
+            <EditText
+                android:id="@+id/id_etName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Nombre(s)"
+                android:textColorHint="@color/grey"
+                android:textColor="@color/black"
+                android:visibility="gone"/>
+            <EditText
+                android:id="@+id/id_etLastName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Apellido(s)"
+                android:textColorHint="@color/grey"
+                android:textColor="@color/black"
+                android:visibility="gone"/>
+            <EditText
+                android:id="@+id/id_etMail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:height="48dp"
+                android:hint="Correo electrónico"
+                android:textColorHint="@color/grey"
+                android:textColor="@color/black"
+                android:visibility="gone"/>
+            <EditText
+                android:id="@+id/id_etPhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:height="48dp"
+                android:hint="Teléfono"
+                android:textColorHint="@color/grey"
+                android:textColor="@color/black"
+                android:visibility="gone"/>
+            <EditText
+                android:id="@+id/id_etDirection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:height="48dp"
+                android:hint="Dirección"
+                android:textColorHint="@color/grey"
+                android:textColor="@color/black"
+                android:visibility="gone"/>
 
             <EditText
                 android:id="@+id/id_EtUser"
@@ -55,7 +106,7 @@
                 android:id="@+id/id_etPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:height="48dp"
                 android:textColorHint="@color/grey"
                 android:drawableStart="@drawable/ic_lock"
@@ -74,7 +125,8 @@
                 andorid:textColor="@color/primary"
                 android:background="@android:color/transparent"
                 android:layout_marginTop="16dp"
-                android:textSize="16sp"/>
+                android:textSize="16sp"
+                />
 
             <Button
                 android:id="@+id/btnLogin"
