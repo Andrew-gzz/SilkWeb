@@ -15,14 +15,15 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:paddingHorizontal="18dp"
-            android:paddingTop="25dp">
+            android:layout_marginTop="25dp">
            <TextView
                android:layout_width="match_parent"
                android:layout_height="wrap_content"
                android:text="@string/FragmentTileFavorite"
                android:gravity="center"
                android:textColor="@color/primaryLight"
-               android:textSize="20sp">
+               android:textSize="20sp"
+               android:textStyle="bold">
            </TextView>
         </LinearLayout>
         <LinearLayout

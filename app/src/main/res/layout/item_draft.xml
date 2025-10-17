@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="10dp"
+    app:cardCornerRadius="23dp"
+    app:cardElevation="0dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_draft_card">
+        <TextView
+            android:id="@+id/id_tvTitleDraft"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="20dp"
+            android:layout_weight="1"
+            android:text="@string/tvTextDraft"
+            android:textColor="@color/primaryLight"
+            android:textSize="22sp"
+            android:layout_marginEnd="8dp"/>
+        <Button
+            android:id="@+id/id_btnEditDraft"
+            android:layout_width="150dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="5dp"
+            android:text="@string/btnTextDraft"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/primaryLight"
+            android:backgroundTint="@color/primary"/>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

@@ -50,7 +50,8 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         btnDrafts.setOnClickListener {
-
+            val intent = Intent(this, DraftsActivity::class.java)
+            startActivity(intent)
         }
 
         btnConfig.setOnClickListener {

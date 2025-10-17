@@ -29,6 +29,18 @@
     <!-- Favorite Fragment -->
     <string name="FragmentTileFavorite">Favoritos</string>
     <string name="btnTextFilter">Filtrar</string>
+    <!-- Draft Activity -->
+    <string name="FragmentTileDraft">Borradores</string>
+    <string name="btnTextDraft">Editar</string>"
+    <string name="tvTextDraft">Borrador</string>
     <!-- Cosas del usuario -->
+    <!-- Config Activity -->
+    <string name="tvName">Nombre(s)</string>
+    <string name="tvLastName">Apellido(s)</string>
+    <string name="tvMail">Correo</string>
+    <string name="tvPhone">Teléfono</string>
+    <string name="tvAddress">Dirección</string>
+    <string name="tvUsername">Usuario</string>
+    <string name="tvPassword">Contraseña</string>
     <string name="PhotoDescription">Foto de perfil</string>
 </resources>

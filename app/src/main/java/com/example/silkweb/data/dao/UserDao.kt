@@ -7,12 +7,13 @@ import com.example.silkweb.data.model.UserRegister
 
 object UserDao {
 
-    fun loginUser(username: String, password: String): UserModel? {
+    fun loginUser(user: String, password: String): UserModel? {
         val conn = MySqlConexion.getConexion()
-        val sql = "SELECT id, username, password FROM users WHERE username = ?"
+        val sql = "SELECT id, username, password FROM users WHERE username = ? OR email = ?"
         val ps = conn.prepareStatement(sql)
 
-        ps.setString(1, username)
+        ps.setString(1, user)
+        ps.setString(2, user)
         val rs = ps.executeQuery()
 
         var user: UserModel? = null
@@ -185,12 +186,55 @@ object UserDao {
         return user
     }
 
+    fun checkFullNameExists(name:String, lastname:String): UserModel? {
+        val conn = MySqlConexion.getConexion()
+        val sql = "SELECT id, name, lastname FROM users WHERE name = ? AND lastname = ?"
+        val ps = conn.prepareStatement(sql)
+
+        ps.setString(1, name)
+        ps.setString(2, lastname)
+
+        val rs = ps.executeQuery()
+        var user: UserModel? = null
+
+        if (rs.next()) {
+            val dbname = rs.getString("name")
+            val dblastname = rs.getString("lastname")
+
+            // Validar si existe un usuario con ese nombre
+            if(dbname == name && dblastname == lastname){
+                user = UserModel(
+                    rs.getInt("id"),
+                    null,   // idPhoto
+                    dbname,     // name
+                    dblastname,     // lastname
+                    "",
+                    "",     // email
+                    "",
+                    null,   // phone
+                    null,   // direction
+                    "",     // createdAt
+                    null    // updatedAt
+                )
+            }else{
+                user = null
+            }
+        }
+
+        rs.close()
+        ps.close()
+        conn.close()
+
+        return user
+    }
+
     fun userData(username: String): UserLogin? {
         val conn = MySqlConexion.getConexion()
-        val sql = "SELECT id_photo, name, lastname, username, email, password, phone, direction FROM users WHERE username = ?"
+        val sql = "SELECT id_photo, name, lastname, username, email, password, phone, direction FROM users WHERE username = ? OR email = ?;"
         val ps = conn.prepareStatement(sql)
 
         ps.setString(1, username)
+        ps.setString(2, username)
         val rs = ps.executeQuery()
         var user: UserLogin? = null
 
@@ -205,7 +249,7 @@ object UserDao {
             val dbDirection = rs.getString("direction")
 
             // Validar si existe un usuario con ese nombre
-            if(dbUsername == username){
+            if(dbUsername == username || dbEmail == username){
                 user = UserLogin(
                     dbPhoto,   // id_photo
                     dbName,     // name
