@@ -16,4 +16,5 @@ interface UserDaoLocal {
 
     @Query("DELETE FROM users")
     suspend fun clearUsers()
+
 }

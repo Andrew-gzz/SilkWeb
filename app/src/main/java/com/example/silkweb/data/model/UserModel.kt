@@ -33,4 +33,3 @@ data class UserLogin(
     val phone: String?,
     val direction: String?
 )
-

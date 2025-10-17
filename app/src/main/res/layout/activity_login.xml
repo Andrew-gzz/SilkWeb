@@ -95,7 +95,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:height="48dp"
-                android:hint="Usuario"
+                android:hint="Usuario o correo"
                 android:textColorHint="@color/grey"
                 android:textColor="@color/black"
                 android:drawableStart="@drawable/ic_profile"
