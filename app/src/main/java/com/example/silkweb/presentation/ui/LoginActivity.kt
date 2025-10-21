@@ -101,14 +101,14 @@ class LoginActivity : AppCompatActivity() {
         } else {
             Thread {
                 try {
-                    val user = UserDao.loginUser(username, password)
+                    val user = UserDao.loginUserSP(username, password)
 
                     runOnUiThread {
-                        if (user == null) {
-                            Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()
+                        if (user != "Login exitoso") {
+                            Toast.makeText(this, user, Toast.LENGTH_SHORT).show()
                         }
                     }
-                    if (user != null) {
+                    if (user == "Login exitoso") {
                         val userData = UserDao.userData(username)
                         if (userData != null) {
                             saveUserLocal(userData)
@@ -117,7 +117,7 @@ class LoginActivity : AppCompatActivity() {
                                 val userLocal = db.userDaoLocal().getUser()
                                 if (userLocal != null) {
                                     runOnUiThread {
-                                        Toast.makeText(this@LoginActivity, "Usuario local: ${userLocal.username}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(this@LoginActivity, "Bienvenid@: ${userLocal.username}", Toast.LENGTH_SHORT).show()
                                     }
                                     val intent = Intent(this@LoginActivity, MainActivity::class.java)
                                     startActivity(intent)
@@ -166,10 +166,10 @@ class LoginActivity : AppCompatActivity() {
         var direction: String? = findViewById<EditText>(R.id.id_etDirection).text.toString().trim()
         try{
             val fullname = DataValidator.idDuplicateFullname(name, lastName)
-            if (fullname != null) throw Exception(fullname)
+            if (fullname != "Nombre y apellido disponibles") throw Exception(fullname)
             //Email
             val emailCheck = DataValidator.isDuplicateEmail(email)
-            if (emailCheck != null) throw Exception(emailCheck)
+            if (emailCheck != "El correo está disponible") throw Exception(emailCheck)
             // Teléfono (opcional)
             if (!phone.isNullOrEmpty()) {
                 val phoneError = DataValidator.validatePhone(phone)
@@ -181,7 +181,7 @@ class LoginActivity : AppCompatActivity() {
             if (direction.isNullOrEmpty()) direction = null
             //Usuario
             val userCheck = DataValidator.isDuplicateUser(username)
-            if (userCheck != null)  throw Exception(userCheck)
+            if (userCheck != "El nombre de usuario está disponible")  throw Exception(userCheck)
             //Contraseña
             val passwordError = DataValidator.validatePassword(password)
             if (passwordError != null) throw Exception(passwordError)

@@ -11,7 +11,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.silkweb.R
 import com.example.silkweb.data.dao.DataValidator
+import com.example.silkweb.data.dao.UserDao
 import com.example.silkweb.data.local.AppDatabase
+import com.example.silkweb.data.model.UserDataForUpdate
 import kotlinx.coroutines.launch
 
 class ConfigActivity : AppCompatActivity() {
@@ -31,14 +33,12 @@ class ConfigActivity : AppCompatActivity() {
             finish()
         }
         btnMod.setOnClickListener {
-            modifyData()
+            val success = modifyData()
+            if(success) finish()
         }
         btnImg.setOnClickListener {
 
         }
-    }
-    private fun modifyData(){
-        provisionalname()
     }
     private fun setUserData(){
         val db = AppDatabase.getDatabase(this)
@@ -72,18 +72,19 @@ class ConfigActivity : AppCompatActivity() {
         }
     }
 
-    data class UserModify(
+    private data class UserModify(
         val idPhoto: ImageButton?,
+        val username: EditText,
         val name: EditText?,
         val lastName: EditText?,
-        val username: EditText,
         val email: EditText,
-        val password: EditText,
         val phone: EditText?,
-        val direction: EditText?
+        val direction: EditText?,
+        val password: EditText,
+        val newUser: EditText
     )
-    private fun provisionalname(){
-        var modUser: UserModify = UserModify(
+    private fun modifyData(): Boolean {
+        val modUser: UserModify = UserModify(
             idPhoto = findViewById<ImageButton>(R.id.id_ivProfileImage),
             name = findViewById<EditText>(R.id.id_etName),
             lastName = findViewById<EditText>(R.id.id_etLastName),
@@ -91,35 +92,130 @@ class ConfigActivity : AppCompatActivity() {
             phone = findViewById<EditText>(R.id.id_etPhone),
             direction = findViewById<EditText>(R.id.id_etDirection),
             username = findViewById<EditText>(R.id.id_EtUser),
-            password = findViewById<EditText>(R.id.id_etPassword)
+            password = findViewById<EditText>(R.id.id_etPassword),
+            newUser = findViewById<EditText>(R.id.id_EtUser)
         )
-        Toast.makeText(this, validate(modUser), Toast.LENGTH_LONG).show()
 
-    }
-    private fun validate(user: UserModify): String? {
-        var msj: String? = "No hubo ninguna excepción"
-        when{
-            !user.name?.text.isNullOrEmpty() && !user.lastName?.text.isNullOrEmpty()->{
-                msj = DataValidator.idDuplicateFullname(user.name.text.toString(),user.lastName.text.toString())
+        val userForUpdate = validateFields(modUser)
+        if (userForUpdate != null) {
+            try {
+                var msj = "Error al ejecutar el procedimiento"
+                val thread = Thread {
+                    msj = UserDao.modUserSP(userForUpdate)
+                }
+                thread.start()
+                thread.join()
+
+                if (msj != "Datos actualizados correctamente") throw Exception(msj)
+
+                //Actualizar en la base de datos local
+                lifecycleScope.launch {
+                    val db = AppDatabase.getDatabase(this@ConfigActivity)
+                    val userDao = db.userDaoLocal()
+                    val localUser = userDao.getUser()
+
+                    if (localUser != null) {
+                        userDao.updateUserData(
+                            id = localUser.id,
+                            name = userForUpdate.name,
+                            lastName = userForUpdate.lastname,
+                            username = userForUpdate.newUsername ?: userForUpdate.username,
+                            email = userForUpdate.email,
+                            password = userForUpdate.password,
+                            phone = userForUpdate.phone,
+                            direction = userForUpdate.direction
+                        )
+                        runOnUiThread {
+                            Toast.makeText(this@ConfigActivity, "Datos actualizados localmente", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+
+                return true
+            } catch (e: Exception) {
+                Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
+                return false
             }
-            !user.name?.text.isNullOrEmpty() && user.lastName?.text.isNullOrEmpty()->{
-                msj = DataValidator.idDuplicateFullname(user.name.text.toString(),user.lastName?.hint.toString())
-            }
-            user.name?.text.isNullOrEmpty() && !user.lastName?.text.isNullOrEmpty()->{
-                msj = DataValidator.idDuplicateFullname(user.name?.hint.toString(),user.lastName.text.toString())
-            }
-            !user.email.text.isNullOrEmpty()-> msj = DataValidator.isDuplicateEmail(user.email.text.toString())
-            !user.phone?.text.isNullOrEmpty()-> msj = DataValidator.validatePhone(user.phone.text.toString())
-            !user.username.text.isNullOrEmpty()-> msj = DataValidator.isDuplicateUser(user.username.text.toString())
-            !user.password.text.isNullOrEmpty()-> msj = DataValidator.validatePassword(user.password.text.toString())
+        } else {
+            return false
         }
-        return msj
     }
+
+    private fun validateFields(user: UserModify): UserDataForUpdate? {
+        var updatedUser: UserDataForUpdate? = null
+        var msj: String? = "Todo correcto en validateFields"
+        var x : Boolean = false
+        var y : Boolean = false
+        try {
+            //Validaciones
+            var nameValue:String
+            //--------------Nombre Completo-------------//
+            if (!user.name?.text.isNullOrEmpty()) {
+                nameValue = user.name.text.toString()
+            } else {
+                nameValue = user.name?.hint.toString()
+                x = true
+            }
+            var lastNameValue:String
+            if (!user.lastName?.text.isNullOrEmpty()) {
+                lastNameValue = user.lastName.text.toString()
+            }else {
+                lastNameValue = user.lastName?.hint.toString()
+                y = true
+            }
+            if(x == false || y == false){
+                msj = DataValidator.idDuplicateFullname(nameValue, lastNameValue)
+                if (msj != "Nombre y apellido disponibles") throw Exception(msj)
+            }
+            //--------------Correo-------------//
+            var emailValue: String = user.email.hint.toString()
+            if(!user.email.text.isNullOrEmpty()) {
+                throw Exception("No puedes modificar tu correo")
+            }
+            //--------------Teléfono-------------//
+            var phoneValue : String? = user.phone?.hint.toString()
+            if(!user.phone?.text.isNullOrEmpty()) {
+                msj = DataValidator.validatePhone(user.phone.text.toString())
+                if (msj != null) throw Exception(msj) else phoneValue =user.phone.text.toString()
+            }
+            //--------------Dirección-------------//
+            var directionValue = user.direction?.hint.toString()
+            if (!user.direction?.text.isNullOrEmpty()) {
+                if(user.direction.text.length >= 255) throw Exception("La dirección no puede pasar de 255 caracteres")
+                directionValue = user.direction.text.toString()
+            }
+            //--------------Usuario-------------//
+            val usernameValue = user.username.hint.toString()
+            var newUsernameValue: String? = user.username.hint.toString()
+            if(!user.username.text.isNullOrEmpty()){
+                msj = DataValidator.isDuplicateUser(user.username.text.toString())
+                if (msj != "El nombre de usuario está disponible") throw Exception(msj) else newUsernameValue = user.username.text.toString()
+            }
+            //--------------Contraseña-------------//
+            var passwordValue: String = user.password.hint.toString()
+            if(!user.password.text.isNullOrEmpty()){
+                msj = DataValidator.validatePassword(user.password.text.toString())
+                if (msj != null) throw Exception(msj) else passwordValue = user.password.text.toString()
+            }
+
+            // Crear y retornar el objeto de actualización
+            updatedUser = UserDataForUpdate(
+                idPhoto = null,
+                name = nameValue,
+                lastname = lastNameValue,
+                username = usernameValue,
+                email = emailValue,
+                password = passwordValue,
+                phone = phoneValue,
+                direction = directionValue,
+                newUsername = newUsernameValue
+            )
+
+        } catch (e: Exception) {
+            Toast.makeText(this, e.message ?: "Error desconocido en la validación", Toast.LENGTH_SHORT).show()
+        }
+
+        return updatedUser
+    }
+
 }
-
-/*
-    Cosas que se tiene que hacer aqui, rellenar datos desde los datos locales (listo)
-    Al confirmar hacer el update a la base de datos con todos los datos nuevos
-    *El update at se hara directamente en MySQL*
-
-*/

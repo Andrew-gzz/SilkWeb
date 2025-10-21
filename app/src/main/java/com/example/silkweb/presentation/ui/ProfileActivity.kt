@@ -21,6 +21,10 @@ class ProfileActivity : AppCompatActivity() {
         setData()
         options()
     }
+    override fun onResume() {
+        super.onResume()
+        setData()
+    }
 
     private fun setData(){
         val db = AppDatabase.getDatabase(this)
