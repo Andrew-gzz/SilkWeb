@@ -1,16 +1,22 @@
 package com.example.silkweb.presentation.ui
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.silkweb.R
 import com.example.silkweb.data.dao.DataValidator
+import com.example.silkweb.data.dao.ImageDao
 import com.example.silkweb.data.dao.UserDao
 import com.example.silkweb.data.local.AppDatabase
 import com.example.silkweb.data.model.UserDataForUpdate
@@ -29,7 +35,6 @@ class ConfigActivity : AppCompatActivity() {
         val btnImg = findViewById<ImageButton>(R.id.id_ivProfileImage)
 
         btnback.setOnClickListener {
-            Log.i("ConfigActivity", "✅ Botón encontrado, asignando listener")
             finish()
         }
         btnMod.setOnClickListener {
@@ -37,7 +42,15 @@ class ConfigActivity : AppCompatActivity() {
             if(success) finish()
         }
         btnImg.setOnClickListener {
-
+            AlertDialog.Builder(this)
+                .setTitle("Cambiar foto de perfil")
+                .setMessage("Se guardara en automatico la nueva foto que selecciones, deseas proceder?")
+                .setPositiveButton("Aceptar") { dialog, which ->
+                    //Lógica para abrir la galería y seleccionar una imagen
+                    guardarNuevaFoto()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
         }
     }
     private fun setUserData(){
@@ -218,4 +231,101 @@ class ConfigActivity : AppCompatActivity() {
         return updatedUser
     }
 
+     fun guardarNuevaFoto() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        intent.type = "image/*"
+        pickImageLauncher.launch(intent)
+    }
+
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        try {
+            if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+                val imageUri = result.data!!.data ?: throw Exception("URI nulo o inválido")
+
+                // Conservar permisos para usar la imagen después
+                contentResolver.takePersistableUriPermission(
+                    imageUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+
+                val imageButton = findViewById<ImageButton>(R.id.id_ivProfileImage)
+                imageButton.setImageURI(imageUri)
+
+                val username = findViewById<TextView>(R.id.id_tvUsername).text.toString()
+
+                val inputStream = contentResolver.openInputStream(imageUri)
+                    ?: throw Exception("No se pudo abrir el InputStream de la imagen")
+
+                val imageBytes = inputStream.readBytes()
+                inputStream.close()
+
+                val fileName = imageUri.lastPathSegment ?: "profile_image.png"
+
+                Thread {
+                    val newImageId = ImageDao.addProfileImage(username, imageBytes, fileName, imageUri.toString())
+
+                    try {
+                        val db = AppDatabase.getDatabase(this)
+                        val mediaDao = db.mediaDaoLocal()
+                        val mediaEntity = com.example.silkweb.data.local.MediaEntity(
+                            id = newImageId,
+                            idPost = null,
+                            fileName = fileName,
+                            route = null,
+                            localUri = imageUri.toString()
+                        )
+
+                        lifecycleScope.launch {
+                            mediaDao.insert(mediaEntity)
+                            runOnUiThread {
+                                Toast.makeText(this@ConfigActivity, "Imagen guardada localmente", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        runOnUiThread {
+                            Toast.makeText(this@ConfigActivity, "Error al guardar localmente: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    runOnUiThread {
+                        Toast.makeText(this, "Foto actualizada correctamente", Toast.LENGTH_LONG).show()
+                    }
+                }.start()
+            } else {
+                Toast.makeText(this, "No se seleccionó ninguna imagen", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Error al seleccionar una foto: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+        debugMostrarMedia()
+    }
+    private fun debugMostrarMedia() {
+        val db = AppDatabase.getDatabase(this)
+        val mediaDao = db.mediaDaoLocal()
+
+        lifecycleScope.launch {
+            val lista = mediaDao.getAllMedia()
+            if (lista.isEmpty()) {
+                Log.d("ROOM_MEDIA", "📭 No hay registros en la tabla media")
+            } else {
+                for (m in lista) {
+                    Log.d(
+                        "ROOM_MEDIA",
+                        "🖼 ID: ${m.id} | fileName: ${m.fileName} | route: ${m.route} | localUri: ${m.localUri}"
+                    )
+                }
+            }
+        }
+    }
 }
+/*
+      <--- Cosas por hacer --->
+      --Cuando inicias sesion rellenar la tabla de media de room con los datos de tu foto de perfil
+      --Usar el local storage para el seteo de la imagen en todos lados
+
+*/

@@ -70,12 +70,13 @@ class ProfileActivity : AppCompatActivity() {
     private fun logoutUser() {
         val db = AppDatabase.getDatabase(this)
         val userDao = db.userDaoLocal()
+        val mediaDao = db.mediaDaoLocal()
 
         lifecycleScope.launch {
             try {
                 // Borra el usuario local
                 userDao.clearUsers()
-
+                mediaDao.clearMedia()
                 // Notifica al usuario
                 runOnUiThread {
                     Toast.makeText(this@ProfileActivity, "Sesión cerrada correctamente", Toast.LENGTH_SHORT).show()
