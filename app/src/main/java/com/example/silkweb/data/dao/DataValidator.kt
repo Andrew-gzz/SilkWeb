@@ -29,6 +29,7 @@ object DataValidator {
     }
 
     //Validacion con base de datos
+
     fun isDuplicateUser(username: String): String? {
         var msj: String? = null
         val userTrimmed = username.trim()
@@ -43,14 +44,7 @@ object DataValidator {
 
         // Validación en segundo plano
         val thread = Thread {
-            try {
-                val user = UserDao.checkUserExists(username)
-                if (user != null) {
-                    msj = "El nombre de usuario no está disponible"
-                }
-            } catch (e: Exception) {
-                msj = "Error de conexión: ${e.message}"
-            }
+                msj = UserDao.checkUserExistsSP(username)
         }
 
         thread.start()
@@ -70,14 +64,7 @@ object DataValidator {
 
         // Validación en segundo plano
         val thread = Thread {
-            try {
-                val user = UserDao.checkEmailExists(emailTrimmed)
-                if (user != null) {
-                    msj = "El email no está disponible"
-                }
-            } catch (e: Exception) {
-                msj = "Error de conexión: ${e.message}"
-            }
+            msj = UserDao.checkEmailExistsSP(emailTrimmed)
         }
 
         thread.start()
@@ -96,14 +83,12 @@ object DataValidator {
         }
         // Validación en segundo plano
         val thread = Thread {
-            try {
-                val user = UserDao.checkFullNameExists(name, lastname)
-                if (user != null) {
-                    msj = "Ya hay un $name $lastname resgistrado"
-                }
-            } catch (e: Exception) {
-                msj = "Error de conexión: ${e.message}"
+            try{
+                msj = UserDao.checkFullNameExistsSP(name, lastname)
+            }catch (e: Exception){
+                msj = e.message
             }
+
         }
 
         thread.start()

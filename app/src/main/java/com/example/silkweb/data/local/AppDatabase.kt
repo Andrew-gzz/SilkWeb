@@ -5,9 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [UserEntity::class], version = 1)
+@Database(entities = [UserEntity::class, MediaEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDaoLocal(): UserDaoLocal
+    abstract fun mediaDaoLocal(): MediaDaoLocal
 
     companion object {
         @Volatile
@@ -19,7 +20,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "silkweb_local_db"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
