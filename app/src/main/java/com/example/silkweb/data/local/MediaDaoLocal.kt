@@ -19,4 +19,7 @@ interface MediaDaoLocal {
     @Query("SELECT * FROM media")
     suspend fun getAllMedia(): List<MediaEntity>
 
+    @Query("DELETE FROM media WHERE id = :id")
+    suspend fun deleteMediaById(id: Int)
+
 }

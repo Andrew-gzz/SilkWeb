@@ -2,6 +2,7 @@ package com.example.silkweb.presentation.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -16,9 +17,13 @@ import com.example.silkweb.data.model.UserRegister
 import com.example.silkweb.data.model.UserLogin
 import androidx.lifecycle.lifecycleScope
 import com.example.silkweb.data.dao.DataValidator
+import com.example.silkweb.data.dao.ImageDao
 import com.example.silkweb.data.local.AppDatabase
+import com.example.silkweb.data.local.MediaEntity
 import com.example.silkweb.data.local.UserEntity
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.io.File
 
 class LoginActivity : AppCompatActivity() {
 
@@ -98,43 +103,60 @@ class LoginActivity : AppCompatActivity() {
 
         if (username.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Por favor llena todos los campos", Toast.LENGTH_SHORT).show()
-        } else {
-            Thread {
-                try {
-                    val user = UserDao.loginUserSP(username, password)
+            return
+        }
+        Thread {
+            try {
+                val user = UserDao.loginUserSP(username, password)
 
+                if (user != "Login exitoso") {
                     runOnUiThread {
-                        if (user != "Login exitoso") {
-                            Toast.makeText(this, user, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, user, Toast.LENGTH_SHORT).show()
+                    }
+                }else{
+                    val userData = UserDao.userData(username)
+                    if (userData != null) {
+                        saveUserLocal(userData)
+
+                        // 🔹 Nuevo: obtener foto de perfil del SP
+                        val mediaData = ImageDao.getPhotoDataByUsername(username)
+                        if (mediaData != null) {
+                            val db = AppDatabase.getDatabase(this)
+                            val mediaDao = db.mediaDaoLocal()
+
+                            // Guardar el BLOB como archivo local
+                            val fileName = mediaData.fileName ?: "profile_temp.jpg"
+                            val file = File(this.filesDir, fileName)
+                            mediaData.file?.let { file.writeBytes(it) }
+
+                            // Guardar en Room
+                            val mediaEntity = MediaEntity(
+                                id = userData.idPhoto?: 0,
+                                fileName = fileName,
+                                route = file.absolutePath,
+                                localUri = file.toURI().toString()
+                            )
+                            runBlocking {
+                                mediaDao.insert(mediaEntity)
+                            }
+                        }
+                        runOnUiThread {
+                            Toast.makeText(this, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
+                            startActivity(
+                                Intent(this, MainActivity::class.java)
+                                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                            )
+                            finish()
                         }
                     }
-                    if (user == "Login exitoso") {
-                        val userData = UserDao.userData(username)
-                        if (userData != null) {
-                            saveUserLocal(userData)
-                            lifecycleScope.launch {
-                                val db = AppDatabase.getDatabase(this@LoginActivity)
-                                val userLocal = db.userDaoLocal().getUser()
-                                if (userLocal != null) {
-                                    runOnUiThread {
-                                        Toast.makeText(this@LoginActivity, "Bienvenid@: ${userLocal.username}", Toast.LENGTH_SHORT).show()
-                                    }
-                                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                                    startActivity(intent)
-                                    finish()
-                                }
-                            }
-
-                        }else throw Exception("Error al guardar los datos del usuario de manera local")
-                    }
-                } catch (e: Exception) {
-                    runOnUiThread {
-                        Toast.makeText(this, "Error 500: Fallo de conexión con la BD\n${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                    e.printStackTrace() // Para ver en el Logcat la traza completa
                 }
-            }.start()
-        }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this, "Error 500: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+                e.printStackTrace()
+            }
+        }.start()
     }
 
     private fun registerUsers() {

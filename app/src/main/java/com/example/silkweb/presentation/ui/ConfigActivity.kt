@@ -2,25 +2,30 @@ package com.example.silkweb.presentation.ui
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.example.silkweb.R
 import com.example.silkweb.data.dao.DataValidator
 import com.example.silkweb.data.dao.ImageDao
 import com.example.silkweb.data.dao.UserDao
 import com.example.silkweb.data.local.AppDatabase
 import com.example.silkweb.data.model.UserDataForUpdate
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ConfigActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,29 +64,38 @@ class ConfigActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val user = userDao.getUser()
-            runOnUiThread {
-                if (user != null) {
-                    val usernameView = findViewById<TextView>(R.id.id_tvUsername)
-                    usernameView.text = user.username
-                    val nombre = findViewById<EditText>(R.id.id_etName)
-                    nombre.hint = user.name
-                    val apellido = findViewById<EditText>(R.id.id_etLastName)
-                    apellido.hint = user.lastName
-                    val correo = findViewById<EditText>(R.id.id_etMail)
-                    correo.hint = user.email
-                    val telefono = findViewById<EditText>(R.id.id_etPhone)
-                    telefono.hint = user.phone
-                    val direccion = findViewById<EditText>(R.id.id_etDirection)
-                    direccion.hint = user.direction
-                    val usuario = findViewById<EditText>(R.id.id_EtUser)
-                    usuario.hint = user.username
-                    val contrasena = findViewById<EditText>(R.id.id_etPassword)
-                    contrasena.hint = user.password
-                } else {
-                    val usernameView = findViewById<TextView>(R.id.id_tvUsername)
-                    usernameView.text = "user101_"
-                }
+            val mediaDao = db.mediaDaoLocal()
+
+            if (user != null) {
+                val usernameView = findViewById<TextView>(R.id.id_tvUsername)
+                usernameView.text = user.username
+                val nombre = findViewById<EditText>(R.id.id_etName)
+                nombre.hint = user.name
+                val apellido = findViewById<EditText>(R.id.id_etLastName)
+                apellido.hint = user.lastName
+                val correo = findViewById<EditText>(R.id.id_etMail)
+                correo.hint = user.email
+                val telefono = findViewById<EditText>(R.id.id_etPhone)
+                telefono.hint = user.phone
+                val direccion = findViewById<EditText>(R.id.id_etDirection)
+                direccion.hint = user.direction
+                val usuario = findViewById<EditText>(R.id.id_EtUser)
+                usuario.hint = user.username
+                val contrasena = findViewById<EditText>(R.id.id_etPassword)
+                contrasena.hint = user.password
+                val photoView = findViewById<ImageView>(R.id.id_ivProfileImage)
+                // 3) Si hay id de foto, busca media
+                val media = if (user?.idPhoto != null) {
+                    withContext(Dispatchers.IO) { mediaDao.getMediaById(user.idPhoto!!) }
+                } else null
+
+                // 4) Resuelve qué dibujar
+                loadProfileImage(photoView, media?.localUri, media?.route)
+            } else {
+                val usernameView = findViewById<TextView>(R.id.id_tvUsername)
+                usernameView.text = "user101_"
             }
+
         }
     }
 
@@ -270,6 +284,8 @@ class ConfigActivity : AppCompatActivity() {
                     try {
                         val db = AppDatabase.getDatabase(this)
                         val mediaDao = db.mediaDaoLocal()
+                        val userDao = db.userDaoLocal() // para actualizar el usuario
+
                         val mediaEntity = com.example.silkweb.data.local.MediaEntity(
                             id = newImageId,
                             idPost = null,
@@ -278,12 +294,29 @@ class ConfigActivity : AppCompatActivity() {
                             localUri = imageUri.toString()
                         )
 
-                        lifecycleScope.launch {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            // 1) Insertar media nueva
                             mediaDao.insert(mediaEntity)
-                            runOnUiThread {
-                                Toast.makeText(this@ConfigActivity, "Imagen guardada localmente", Toast.LENGTH_SHORT).show()
+
+                            // 2) Obtener usuario actual
+                            val user = userDao.getUser()
+                            if (user != null) {
+                                val oldPhotoId = user.idPhoto
+                                val newId = newImageId
+
+                                // 3) Actualizar idPhoto del usuario (¡ojo al orden de params!)
+                                userDao.updateUserPhoto(user.id, newId)
+
+                                // 4) Borrar media anterior solo si existe y es distinta
+                                if (oldPhotoId != null && oldPhotoId != newId) {
+                                    mediaDao.deleteMediaById(oldPhotoId)
+                                }
+                            }
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@ConfigActivity, "Imagen guardada y actualizada", Toast.LENGTH_SHORT).show()
                             }
                         }
+
                     } catch (e: Exception) {
                         e.printStackTrace()
                         runOnUiThread {
@@ -295,6 +328,7 @@ class ConfigActivity : AppCompatActivity() {
                         Toast.makeText(this, "Foto actualizada correctamente", Toast.LENGTH_LONG).show()
                     }
                 }.start()
+
             } else {
                 Toast.makeText(this, "No se seleccionó ninguna imagen", Toast.LENGTH_SHORT).show()
             }
@@ -322,10 +356,35 @@ class ConfigActivity : AppCompatActivity() {
             }
         }
     }
-}
-/*
-      <--- Cosas por hacer --->
-      --Cuando inicias sesion rellenar la tabla de media de room con los datos de tu foto de perfil
-      --Usar el local storage para el seteo de la imagen en todos lados
 
-*/
+    private fun loadProfileImage(view: ImageView, localUri: String?, route: String?) {
+        when {
+            // Caso A: tenemos URI local (content:// o file://)
+            !localUri.isNullOrBlank() -> {
+                try {
+                    view.setImageURI(Uri.parse(localUri))
+                    // Opcional: si tu URI puede requerir permisos y falla, podrías caer al else if
+                } catch (_: Exception) {
+                    // Si falló, intenta con route si existe
+                    if (!route.isNullOrBlank()) {
+                        Glide.with(view.context).load(route).into(view)
+                    } else {
+                        view.setImageResource(R.drawable.silkweb)
+                    }
+                }
+            }
+            // Caso B: no hay URI local pero sí URL remota
+            !route.isNullOrBlank() -> {
+                Glide.with(view.context)
+                    .load(route)
+                    .placeholder(R.drawable.silkweb)
+                    .error(R.drawable.silkweb)
+                    .into(view)
+            }
+            // Caso C: no hay nada guardado → placeholder
+            else -> {
+                view.setImageResource(R.drawable.silkweb)
+            }
+        }
+    }
+}

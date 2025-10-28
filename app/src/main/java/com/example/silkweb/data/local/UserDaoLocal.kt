@@ -38,4 +38,7 @@ interface UserDaoLocal {
         phone: String?,
         direction: String?
     )
+    @Query("UPDATE users SET idPhoto = :idPhoto WHERE id = :id")
+    suspend fun updateUserPhoto(id: Int, idPhoto: Int)
+
 }
