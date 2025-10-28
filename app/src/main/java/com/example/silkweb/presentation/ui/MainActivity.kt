@@ -35,9 +35,6 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(this, ProfileActivity::class.java)
                     startActivity(intent)
                 }
-                else->{
-
-                }
             }
             true
         }
@@ -54,7 +51,6 @@ class MainActivity : AppCompatActivity() {
             if (user == null) {
                 val intent = Intent(this@MainActivity, LoginActivity::class.java)
                 startActivity(intent)
-                finish()
             }
         }
     }

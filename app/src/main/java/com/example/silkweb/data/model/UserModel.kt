@@ -33,3 +33,14 @@ data class UserLogin(
     val phone: String?,
     val direction: String?
 )
+data class UserDataForUpdate(
+    val idPhoto: Int?,
+    val name: String,
+    val lastname: String,
+    val username: String,
+    val email: String,
+    val password: String,
+    val phone: String?,
+    val direction: String?,
+    val newUsername: String?
+)
