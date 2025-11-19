@@ -2,6 +2,7 @@ package com.example.silkweb.presentation.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -16,6 +17,7 @@ import com.example.silkweb.data.model.UserRegister
 //For local storage
 import com.example.silkweb.data.model.UserLogin
 import androidx.lifecycle.lifecycleScope
+import com.example.silkweb.api.ApiClient
 import com.example.silkweb.data.dao.DataValidator
 import com.example.silkweb.data.dao.ImageDao
 import com.example.silkweb.data.local.AppDatabase
@@ -23,6 +25,7 @@ import com.example.silkweb.data.local.MediaEntity
 import com.example.silkweb.data.local.UserEntity
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import java.io.File
 
 class LoginActivity : AppCompatActivity() {
@@ -107,6 +110,7 @@ class LoginActivity : AppCompatActivity() {
         }
         Thread {
             try {
+                /* Antiguo Login
                 val user = UserDao.loginUserSP(username, password)
 
                 if (user != "Login exitoso") {
@@ -149,7 +153,91 @@ class LoginActivity : AppCompatActivity() {
                             finish()
                         }
                     }
-                }
+                }*/
+                Thread {
+                    try {
+                        val response = ApiClient.login(username, password)
+                        if (response == null) {
+                            runOnUiThread {
+                                Toast.makeText(this, "Error al conectar con el servidor", Toast.LENGTH_SHORT).show()
+                            }
+                            return@Thread
+                        }
+
+                        // Convertimos la respuesta JSON a objeto
+                        val json = JSONObject(response)
+
+                        if (!json.getBoolean("success")) {
+                            runOnUiThread {
+                                Toast.makeText(this, json.getString("message"), Toast.LENGTH_SHORT).show()
+                            }
+                            return@Thread
+                        }
+
+                        val userJson = json.getJSONObject("user")
+                        //Esto es para validar si tiene foto o no
+                        val idPhoto = if (userJson.isNull("id_photo")) null else userJson.getInt("id_photo")
+
+                        val userData = UserLogin(
+                            idPhoto,
+                            userJson.getString("name"),
+                            userJson.getString("lastname"),
+                            userJson.getString("username"),
+                            userJson.getString("email"),
+                            password,
+                            userJson.getString("phone"),
+                            userJson.getString("direction")
+                        )
+
+                        saveUserLocal(userData)
+
+                        // 🔹 Nuevo: obtener foto de perfil
+                        val responsePhoto = ApiClient.getProfilePhoto(username)
+
+                        if (responsePhoto != null) {
+                            val jsonPhoto = JSONObject(responsePhoto)
+                            if (jsonPhoto.getBoolean("success")) {
+
+                                val photoObj = jsonPhoto.getJSONObject("photo")
+
+                                val base64 = photoObj.getString("file")
+                                val fileBytes = Base64.decode(base64, Base64.DEFAULT)
+                                val fileName = photoObj.getString("fileName")
+
+                                // Guardar archivo local
+                                val file = File(this.filesDir, fileName)
+                                file.writeBytes(fileBytes)
+
+                                // Guardar en Room
+                                val db = AppDatabase.getDatabase(this)
+                                val mediaDao = db.mediaDaoLocal()
+
+                                val mediaEntity = MediaEntity(
+                                    id = userData.idPhoto ?: 0,
+                                    fileName = fileName,
+                                    route = file.absolutePath,
+                                    localUri = file.toURI().toString()
+                                )
+
+                                runBlocking {
+                                    mediaDao.insert(mediaEntity)
+                                }
+                            }
+                        }
+
+                        runOnUiThread {
+                            Toast.makeText(this, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this, MainActivity::class.java))
+                            finish()
+                        }
+
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }.start()
+
             } catch (e: Exception) {
                 runOnUiThread {
                     Toast.makeText(this, "Error 500: ${e.message}", Toast.LENGTH_LONG).show()
@@ -161,18 +249,40 @@ class LoginActivity : AppCompatActivity() {
 
     private fun registerUsers() {
         val fields = validateFields()
-        // Aquí puedes llamar tu DAO:
+
         if (fields != null) {
-            Thread{
+            Thread {
                 try {
-                    val result = UserDao.registrar(fields)
+                    val response = ApiClient.register(fields)
+
+                    if (response == null) {
+                        runOnUiThread {
+                            Toast.makeText(this, "Error de servidor", Toast.LENGTH_SHORT).show()
+                        }
+                        return@Thread
+                    }
+
+                    val json = JSONObject(response)
+
+                    if (!json.getBoolean("success")) {
+                        runOnUiThread {
+                            Toast.makeText(this, json.getString("message"), Toast.LENGTH_SHORT).show()
+                        }
+                        return@Thread
+                    }
+
+                    runOnUiThread {
+                        Toast.makeText(this, "Registro exitoso", Toast.LENGTH_SHORT).show()
+                        setVisibility() // Regresar a login
+                    }
+
                 } catch (e: Exception) {
                     runOnUiThread {
-                        Toast.makeText(this, "Error 500: Fallo de conexión con la BD\n${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
             }.start()
-            setVisibility()
+
         }
     }
 

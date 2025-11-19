@@ -25,6 +25,12 @@ import com.example.silkweb.data.model.CreatePostModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.activity.addCallback
+import androidx.appcompat.app.AlertDialog
+import android.provider.OpenableColumns
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class PostActivity : AppCompatActivity() {
 
@@ -43,12 +49,19 @@ class PostActivity : AppCompatActivity() {
         dotsLayout = findViewById(R.id.llDots)
 
         val btnAddImage = findViewById<MaterialButton>(R.id.id_btnImage)
-        val btnClose = findViewById<ImageButton>(R.id.id_back)
-        val btnPublish = findViewById<Button>(R.id.id_btnPost)
-
         btnAddImage.setOnClickListener { openGallery() }
-        btnClose.setOnClickListener { finish() }
-        btnPublish.setOnClickListener { publish() }
+
+        val btnPublish = findViewById<Button>(R.id.id_btnPost)
+        btnPublish.setOnClickListener {  publish() }
+
+        // Intercepta el botón "atrás" del sistema
+        onBackPressedDispatcher.addCallback(this) {
+            intentarGuardarBorradorYSalir()
+        }
+
+        val btnClose = findViewById<ImageButton>(R.id.id_back)
+        btnClose.setOnClickListener { intentarGuardarBorradorYSalir() }
+
     }
 
     private fun openGallery() {
@@ -56,6 +69,9 @@ class PostActivity : AppCompatActivity() {
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.type = "image/*"
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        // flags para poder persistir permisos
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         startActivityForResult(intent, PICK_IMAGES_CODE)
     }
 
@@ -68,10 +84,19 @@ class PostActivity : AppCompatActivity() {
             if (data?.clipData != null) {
                 val count = data.clipData!!.itemCount
                 for (i in 0 until count) {
-                    imageUris.add(data.clipData!!.getItemAt(i).uri)
+                    val uri = data.clipData!!.getItemAt(i).uri
+                    // conservar permisos para usar el Uri en el borrador
+                    contentResolver.takePersistableUriPermission(
+                        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                    imageUris.add(uri)
                 }
             } else if (data?.data != null) {
-                imageUris.add(data.data!!)
+                val uri = data.data!!
+                contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                imageUris.add(uri)
             }
 
             setupViewPager()
@@ -217,9 +242,90 @@ class PostActivity : AppCompatActivity() {
             }
         }
     }
+
+    //-------Logica para guardar como borrador de manera local----------//
+    private fun hayContenidoParaBorrador(): Boolean {
+        val etTitle = findViewById<EditText>(R.id.id_etTitle)
+        val etBody  = findViewById<EditText>(R.id.id_etDescription)
+        val titleHasText = !etTitle.text.isNullOrBlank()
+        val bodyHasText  = !etBody.text.isNullOrBlank()
+        val hasImages    = imageUris.isNotEmpty()
+        return titleHasText || bodyHasText || hasImages
+    }
+
+    private fun intentarGuardarBorradorYSalir() {
+        if (!hayContenidoParaBorrador()) {
+            finish()
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Guardar como borrador")
+            .setMessage("Tienes contenido sin publicar. ¿Deseas guardarlo como borrador?")
+            .setPositiveButton("Guardar") { _, _ -> guardarBorrador() }
+            .setNegativeButton("Descartar") { _, _ -> finish() }
+            .setNeutralButton("Cancelar", null)
+            .show()
+    }
+
+    private fun guardarBorrador() {
+        val etTitle = findViewById<EditText>(R.id.id_etTitle)
+        val etBody  = findViewById<EditText>(R.id.id_etDescription)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(this@PostActivity)
+            val user = db.userDaoLocal().getUser()
+
+            if (user == null) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@PostActivity, "No hay usuario local", Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+
+            // fecha-hora como String (tu entidad guarda String)
+            val now = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+
+            val draft = com.example.silkweb.data.local.PostEntity(
+                id = 0,               // autogen
+                idPost = null,        // no hay id de backend, es borrador local
+                userId = user.id,     // tu PK local de usuario
+                title  = etTitle.text?.toString()?.trim().orEmpty(),
+                body   = etBody.text?.toString()?.trim().orEmpty(),
+                isDraft = true,
+                createdAt = now
+            )
+
+            // 1) Insertar post y obtener id local
+            val draftId = db.postDaoLocal().insert(draft).toInt()
+
+            // 2) Insertar imágenes asociadas al borrador
+            val mediaDao = db.mediaDaoLocal()
+            for (uri in imageUris) {
+                val fileName = obtenerNombreArchivo(uri) ?: "image_${System.currentTimeMillis()}.jpg"
+                mediaDao.insert(
+                    com.example.silkweb.data.local.MediaEntity(
+                        id = 0,                // autogen
+                        idPost = draftId,      // vincula a este borrador
+                        fileName = fileName,
+                        route = null,
+                        localUri = uri.toString()
+                    )
+                )
+            }
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@PostActivity, "Borrador guardado", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+        }
+    }
+
+    private fun obtenerNombreArchivo(uri: Uri): String? {
+        var name: String? = null
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (idx >= 0 && cursor.moveToFirst()) name = cursor.getString(idx)
+        }
+        return name
+    }
 }
-/*
-* -----------------Cosas por hacer----------------
-* Obtener las imagenes adjuntadas asi como el titulo y body
-* Mandar los datos a la funcion createPost del postController
-* */

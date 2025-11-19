@@ -22,4 +22,8 @@ interface MediaDaoLocal {
     @Query("DELETE FROM media WHERE id = :id")
     suspend fun deleteMediaById(id: Int)
 
+    //En caso de eliminar el borrador tambien se eliminaran las fotos adjuntas
+    @Query("DELETE FROM media WHERE idPost = :idPost")
+    suspend fun deleteMediaByPostId(idPost: Int)
+
 }

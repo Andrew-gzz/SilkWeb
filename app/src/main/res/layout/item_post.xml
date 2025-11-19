@@ -57,6 +57,34 @@
                     android:textColor="@color/primaryLight"
                     android:textSize="16sp">
                 </TextView>
+                <!-- Carrusel de imágenes -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardViewImages"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="15dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp">
+
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/viewPagerImages"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:clipChildren="false"
+                        android:overScrollMode="never" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- Puntos debajo del carrusel -->
+                <LinearLayout
+                    android:id="@+id/llDots"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_gravity="center_horizontal" />
+
                 <HorizontalScrollView
                     android:id="@+id/id_hsImages"
                     android:layout_width="match_parent"

@@ -1,6 +1,8 @@
 package com.example.silkweb.data.dao
 
 import android.util.Patterns
+import com.example.silkweb.api.ApiClient
+import org.json.JSONObject
 
 object DataValidator {
 
@@ -28,13 +30,10 @@ object DataValidator {
         }
     }
 
-    //Validacion con base de datos
+    //Validacion con base de datos (Ya adaptados al nuevo)
 
     fun isDuplicateUser(username: String): String? {
-        var msj: String? = null
         val userTrimmed = username.trim()
-
-        // Validaciones básicas
         when {
             userTrimmed.isEmpty() -> return "El nombre de usuario no puede estar vacío"
             userTrimmed.length < 3 -> return "Debe tener al menos 3 caracteres"
@@ -42,58 +41,56 @@ object DataValidator {
             userTrimmed.contains(" ") -> return "No puede contener espacios"
         }
 
-        // Validación en segundo plano
+        var message: String? = null
         val thread = Thread {
-                msj = UserDao.checkUserExistsSP(username)
+            val response = ApiClient.checkUsername(userTrimmed)
+            if (response != null) {
+                val json = JSONObject(response)
+                message = json.getString("message")
+            }
         }
-
         thread.start()
-        thread.join() // Espera a que termine el hilo (⚠️ bloquea el hilo actual si es el UI thread)
+        thread.join()
 
-        return msj
+        return message
     }
 
     fun isDuplicateEmail(email: String): String? {
-        var msj: String? = null
         val emailTrimmed = email.trim()
 
-        // Validaciones básicas
-        when {
-            !(email.isNotEmpty() && Patterns.EMAIL_ADDRESS.matcher(email).matches())-> return "El email no es valido"
+        if (!Patterns.EMAIL_ADDRESS.matcher(emailTrimmed).matches()) {
+            return "El email no es valido"
         }
 
-        // Validación en segundo plano
+        var message: String? = null
         val thread = Thread {
-            msj = UserDao.checkEmailExistsSP(emailTrimmed)
+            val response = ApiClient.checkEmail(emailTrimmed)
+            if (response != null) {
+                val json = JSONObject(response)
+                message = json.getString("message")
+            }
         }
-
         thread.start()
         thread.join()
 
-        return msj
+        return message
     }
 
     fun idDuplicateFullname(name: String, lastname: String): String?{
-        var msj: String? = null
+        if (name.isEmpty()) return "El nombre no es válido"
+        if (lastname.isEmpty()) return "El apellido no es válido"
 
-        // Validaciones básicas
-        when {
-            !(name.isNotEmpty())-> return "El nombre no es válido"
-            !(lastname.isNotEmpty())->return "El apellido no es válido"
-        }
-        // Validación en segundo plano
+        var message: String? = null
         val thread = Thread {
-            try{
-                msj = UserDao.checkFullNameExistsSP(name, lastname)
-            }catch (e: Exception){
-                msj = e.message
+            val response = ApiClient.checkFullname(name, lastname)
+            if (response != null) {
+                val json = JSONObject(response)
+                message = json.getString("message")
             }
-
         }
-
         thread.start()
         thread.join()
 
-        return msj
+        return message
     }
 }

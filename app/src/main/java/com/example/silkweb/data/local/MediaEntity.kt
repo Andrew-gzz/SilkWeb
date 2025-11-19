@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 //Esta entidad o tabla solo guardara id's de las fotos ya sea de publicaciones o de perfil para hacer eficiente el manejo de memoria
 @Entity(tableName = "media")
 data class MediaEntity(
-    @PrimaryKey(autoGenerate = false) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val idPost: Int? = null,
     val fileName: String? = null,
     val route:String? = null,

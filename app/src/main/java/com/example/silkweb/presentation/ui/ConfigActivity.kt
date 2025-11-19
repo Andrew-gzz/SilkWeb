@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.example.silkweb.R
+import com.example.silkweb.api.ApiClient
 import com.example.silkweb.data.dao.DataValidator
 import com.example.silkweb.data.dao.ImageDao
 import com.example.silkweb.data.dao.UserDao
@@ -26,6 +27,7 @@ import com.example.silkweb.data.model.UserDataForUpdate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 class ConfigActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +60,7 @@ class ConfigActivity : AppCompatActivity() {
                 .show()
         }
     }
+    //Setea los datos del usuario usando la base de datos local
     private fun setUserData(){
         val db = AppDatabase.getDatabase(this)
         val userDao = db.userDaoLocal()
@@ -99,6 +102,9 @@ class ConfigActivity : AppCompatActivity() {
         }
     }
 
+    //----------------------------
+    //Sección la para modificar los datos
+    //----------------------------
     private data class UserModify(
         val idPhoto: ImageButton?,
         val username: EditText,
@@ -110,63 +116,88 @@ class ConfigActivity : AppCompatActivity() {
         val password: EditText,
         val newUser: EditText
     )
+
     private fun modifyData(): Boolean {
-        val modUser: UserModify = UserModify(
-            idPhoto = findViewById<ImageButton>(R.id.id_ivProfileImage),
-            name = findViewById<EditText>(R.id.id_etName),
-            lastName = findViewById<EditText>(R.id.id_etLastName),
-            email = findViewById<EditText>(R.id.id_etMail),
-            phone = findViewById<EditText>(R.id.id_etPhone),
-            direction = findViewById<EditText>(R.id.id_etDirection),
-            username = findViewById<EditText>(R.id.id_EtUser),
-            password = findViewById<EditText>(R.id.id_etPassword),
-            newUser = findViewById<EditText>(R.id.id_EtUser)
+        val modUser = UserModify(
+            idPhoto = findViewById(R.id.id_ivProfileImage),
+            name = findViewById(R.id.id_etName),
+            lastName = findViewById(R.id.id_etLastName),
+            email = findViewById(R.id.id_etMail),
+            phone = findViewById(R.id.id_etPhone),
+            direction = findViewById(R.id.id_etDirection),
+            username = findViewById(R.id.id_EtUser),
+            password = findViewById(R.id.id_etPassword),
+            newUser = findViewById(R.id.id_EtUser)
         )
 
         val userForUpdate = validateFields(modUser)
-        if (userForUpdate != null) {
+        if (userForUpdate == null) return false
+
+        var serverMessage = "Error al ejecutar el procedimiento"
+        var success = false
+        var newUsernameFromServer: String? = null
+
+        // 👇 Igual que antes, pero ahora llamando a la API
+        val thread = Thread {
             try {
-                var msj = "Error al ejecutar el procedimiento"
-                val thread = Thread {
-                    msj = UserDao.modUserSP(userForUpdate)
-                }
-                thread.start()
-                thread.join()
+                val response = ApiClient.updateUserData(userForUpdate)
 
-                if (msj != "Datos actualizados correctamente") throw Exception(msj)
-
-                //Actualizar en la base de datos local
-                lifecycleScope.launch {
-                    val db = AppDatabase.getDatabase(this@ConfigActivity)
-                    val userDao = db.userDaoLocal()
-                    val localUser = userDao.getUser()
-
-                    if (localUser != null) {
-                        userDao.updateUserData(
-                            id = localUser.id,
-                            name = userForUpdate.name,
-                            lastName = userForUpdate.lastname,
-                            username = userForUpdate.newUsername ?: userForUpdate.username,
-                            email = userForUpdate.email,
-                            password = userForUpdate.password,
-                            phone = userForUpdate.phone,
-                            direction = userForUpdate.direction
-                        )
-                        runOnUiThread {
-                            Toast.makeText(this@ConfigActivity, "Datos actualizados localmente", Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                if (response == null) {
+                    serverMessage = "Error de servidor"
+                    return@Thread
                 }
 
-                return true
+                val json = JSONObject(response)
+
+                success = json.optBoolean("success", false)
+                serverMessage = json.optString(
+                    "message",
+                    if (success) "Datos actualizados correctamente" else "Error al actualizar datos"
+                )
+                newUsernameFromServer = json.optString("newUsername", userForUpdate.username)
+
             } catch (e: Exception) {
-                Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
-                return false
+                serverMessage = e.message ?: "Error al procesar la respuesta"
             }
-        } else {
+        }
+
+        thread.start()
+        thread.join()
+
+        if (!success) {
+            Toast.makeText(this, serverMessage, Toast.LENGTH_SHORT).show()
             return false
         }
+
+        // ✔ Si llegó aquí, la API dijo que todo OK → actualizamos Room
+        lifecycleScope.launch {
+            val db = AppDatabase.getDatabase(this@ConfigActivity)
+            val userDao = db.userDaoLocal()
+            val localUser = userDao.getUser()
+
+            if (localUser != null) {
+                userDao.updateUserData(
+                    id = localUser.id,
+                    name = userForUpdate.name,
+                    lastName = userForUpdate.lastname,
+                    username = newUsernameFromServer ?: userForUpdate.username,
+                    email = userForUpdate.email,
+                    password = userForUpdate.password,
+                    phone = userForUpdate.phone,
+                    direction = userForUpdate.direction
+                )
+
+                Toast.makeText(
+                    this@ConfigActivity,
+                    "Datos actualizados localmente",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        return true
     }
+
 
     private fun validateFields(user: UserModify): UserDataForUpdate? {
         var updatedUser: UserDataForUpdate? = null
@@ -245,6 +276,9 @@ class ConfigActivity : AppCompatActivity() {
         return updatedUser
     }
 
+    //----------------------------
+    //Sección la para foto de perfil
+    //----------------------------
      fun guardarNuevaFoto() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -279,56 +313,62 @@ class ConfigActivity : AppCompatActivity() {
                 val fileName = imageUri.lastPathSegment ?: "profile_image.png"
 
                 Thread {
-                    val newImageId = ImageDao.addProfileImage(username, imageBytes, fileName, imageUri.toString())
+                    val response = ApiClient.updateProfileImage(username, imageBytes, fileName)
 
-                    try {
-                        val db = AppDatabase.getDatabase(this)
-                        val mediaDao = db.mediaDaoLocal()
-                        val userDao = db.userDaoLocal() // para actualizar el usuario
+                    if (response != null) {
+                        val json = JSONObject(response)
 
-                        val mediaEntity = com.example.silkweb.data.local.MediaEntity(
-                            id = newImageId,
-                            idPost = null,
-                            fileName = fileName,
-                            route = null,
-                            localUri = imageUri.toString()
-                        )
+                        if (json.getBoolean("success")) {
+                            val newImageId = json.getInt("newImageId")
 
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            // 1) Insertar media nueva
-                            mediaDao.insert(mediaEntity)
+                            // --- Guardar local igual que antes ---
+                            val db = AppDatabase.getDatabase(this)
+                            val mediaDao = db.mediaDaoLocal()
+                            val userDao = db.userDaoLocal()
 
-                            // 2) Obtener usuario actual
-                            val user = userDao.getUser()
-                            if (user != null) {
-                                val oldPhotoId = user.idPhoto
-                                val newId = newImageId
+                            lifecycleScope.launch(Dispatchers.IO) {
 
-                                // 3) Actualizar idPhoto del usuario (¡ojo al orden de params!)
-                                userDao.updateUserPhoto(user.id, newId)
+                                val mediaEntity = com.example.silkweb.data.local.MediaEntity(
+                                    id = newImageId,
+                                    idPost = null,
+                                    fileName = fileName,
+                                    route = null,
+                                    localUri = imageUri.toString()
+                                )
 
-                                // 4) Borrar media anterior solo si existe y es distinta
-                                if (oldPhotoId != null && oldPhotoId != newId) {
-                                    mediaDao.deleteMediaById(oldPhotoId)
+                                mediaDao.insert(mediaEntity)
+
+                                val user = userDao.getUser()
+                                if (user != null) {
+                                    val oldPhotoId = user.idPhoto
+                                    userDao.updateUserPhoto(user.id, newImageId)
+
+                                    if (oldPhotoId != null && oldPhotoId != newImageId) {
+                                        mediaDao.deleteMediaById(oldPhotoId)
+                                    }
+                                }
+
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(
+                                        this@ConfigActivity,
+                                        "Foto actualizada correctamente",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(this@ConfigActivity, "Imagen guardada y actualizada", Toast.LENGTH_SHORT).show()
+
+                        } else {
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    json.getString("message"),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
-
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        runOnUiThread {
-                            Toast.makeText(this@ConfigActivity, "Error al guardar localmente: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
                     }
 
-                    runOnUiThread {
-                        Toast.makeText(this, "Foto actualizada correctamente", Toast.LENGTH_LONG).show()
-                    }
                 }.start()
-
             } else {
                 Toast.makeText(this, "No se seleccionó ninguna imagen", Toast.LENGTH_SHORT).show()
             }
