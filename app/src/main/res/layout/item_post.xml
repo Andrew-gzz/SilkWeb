@@ -31,14 +31,30 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingLeft="15dp">
-                <TextView
-                    android:id="@+id/id_tvTitle"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="top"
-                    android:text="@string/app_name"
-                    android:textSize="16sp">
-                </TextView>
+                    android:orientation="horizontal">
+                    <TextView
+                        android:id="@+id/id_tvTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top"
+                        android:text="@string/app_name"
+                        android:textSize="16sp">
+                    </TextView>
+                    <TextView
+                        android:id="@+id/id_tvDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top"
+                        android:paddingStart="15dp"
+                        android:text="12/08/23"
+                        android:textSize="12sp"
+                        android:textStyle="italic">
+                    </TextView>
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/id_etTitle"
                     android:layout_width="match_parent"
@@ -110,7 +126,8 @@
                         android:background="@android:color/transparent"
                         android:contentDescription="Me encanta"
                         android:src="@drawable/ic_favorite"
-                        android:padding="4dp" />
+                        android:padding="4dp"
+                        />
 
                     <TextView
                         android:id="@+id/id_tvFavoritesCount"

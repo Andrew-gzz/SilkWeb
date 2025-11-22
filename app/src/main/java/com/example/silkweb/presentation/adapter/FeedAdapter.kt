@@ -29,6 +29,7 @@ class FeedAdapter(
         // Datos del usuario
         val profileImage: ImageView = itemView.findViewById(R.id.id_ivProfileImage)
         val username: TextView = itemView.findViewById(R.id.id_tvTitle)
+        val date: TextView = itemView.findViewById(R.id.id_tvDate)
 
         // Contenido del post
         val title: TextView = itemView.findViewById(R.id.id_etTitle)
@@ -75,33 +76,41 @@ class FeedAdapter(
         // ───────────────────────────────
         holder.title.text = post.title
         holder.description.text = post.body
-
+        holder.date.text = formatDate(post.createdAt)
         holder.likesCount.text = post.likeCount.toString()
         holder.commentsCount.text = post.commentCount.toString()
 
         // ───────────────────────────────
         // CARRUSEL: JSON → LISTA DE BITMAPS
         // ───────────────────────────────
+        // Construir lista de imágenes solo si existen
         val imageList = mutableListOf<Bitmap>()
 
-        if (!post.mediaListJson.isNullOrEmpty()) {
-            val array = JSONArray(post.mediaListJson)
+        try {
+            if (!post.mediaListJson.isNullOrEmpty()) {
+                val array = JSONArray(post.mediaListJson)
 
-            for (i in 0 until array.length()) {
-                val item = array.getJSONObject(i)
-                val hasFile = item.getInt("has_file") == 1
+                for (i in 0 until array.length()) {
+                    val item = array.getJSONObject(i)
+                    val hasFile = item.optInt("has_file", 0) == 1
 
-                if (hasFile) {
-                    val mediaId = item.getInt("media_id")
-                    val blob = post.mediaFiles?.get(mediaId)
+                    if (hasFile) {
+                        val mediaId = item.optInt("media_id", -1)
+                        val blob = post.mediaFiles?.get(mediaId)
 
-                    if (blob != null) {
-                        val bmp = BitmapFactory.decodeByteArray(blob, 0, blob.size)
-                        imageList.add(bmp)
+                        if (blob != null) {
+                            val bmp = BitmapFactory.decodeByteArray(blob, 0, blob.size)
+                            imageList.add(bmp)
+                        }
                     }
                 }
             }
+        } catch (e: Exception) {
+            // Por si viene un JSON corrupto
+            e.printStackTrace()
         }
+
+
 
         // ───────────────────────────────
         // Mostrar u ocultar carrusel
@@ -124,16 +133,73 @@ class FeedAdapter(
             )
 
         } else {
+            // Limpia completamente el ViewPager
+            holder.viewPager.adapter = null
+            holder.dotsLayout.removeAllViews()
             holder.cardImages.visibility = View.GONE
         }
+
 
         // ───────────────────────────────
         // EVENTOS DE CLICK
         // ───────────────────────────────
+// LIKE
+        if (post.userLiked) {
+            holder.btnFavorite.setColorFilter(
+                holder.btnFavorite.context.getColor(R.color.secondary)
+            )
+        } else {
+            holder.btnFavorite.setColorFilter(
+                holder.btnFavorite.context.getColor(R.color.primaryLight)
+            )
+        }
+
+// BOOKMARK
+        if (post.userBookmarked) {
+            holder.btnBookMarks.setColorFilter(
+                holder.btnBookMarks.context.getColor(R.color.primary)
+            )
+        } else {
+            holder.btnBookMarks.setColorFilter(
+                holder.btnBookMarks.context.getColor(R.color.primaryLight)
+            )
+        }
+
         holder.root.setOnClickListener { onPostClick(post) }
-        holder.btnFavorite.setOnClickListener { onLikeClick(post) }
+        holder.btnFavorite.setOnClickListener {
+            // INVERTIR ESTADO LOCAL
+            post.userLiked = !post.userLiked
+
+            // ACTUALIZAR UI
+            if (post.userLiked) {
+                holder.btnFavorite.setColorFilter(holder.btnFavorite.context.getColor(R.color.secondary))
+            } else {
+                holder.btnFavorite.setColorFilter(holder.btnFavorite.context.getColor(R.color.primaryLight))
+            }
+            // MANDAR LA ACCIÓN REAL
+            onLikeClick(post)
+        }
         holder.btnComments.setOnClickListener { onCommentClick(post) }
-        holder.btnBookMarks.setOnClickListener { onBookmarkClick(post) }
+        holder.btnBookMarks.setOnClickListener {
+
+            // Cambiar estado local
+            post.userBookmarked = !post.userBookmarked
+
+            // UI inmediata
+            if (post.userBookmarked) {
+                holder.btnBookMarks.setColorFilter(
+                    holder.btnBookMarks.context.getColor(R.color.primary)
+                )
+            } else {
+                holder.btnBookMarks.setColorFilter(
+                    holder.btnBookMarks.context.getColor(R.color.primaryLight)
+                )
+            }
+
+            // Llamar a la API real (sp_interact con type = 2)
+            onBookmarkClick(post)
+        }
+
     }
 
     override fun getItemCount() = posts.size
@@ -171,6 +237,18 @@ class FeedAdapter(
         val posInicio = posts.size
         (posts as MutableList).addAll(newPosts)
         notifyItemRangeInserted(posInicio, newPosts.size)
+    }
+    private fun formatDate(raw: String?): String {
+        if (raw.isNullOrEmpty()) return ""
+
+        return try {
+            // Entrada: 2024-12-01T04:35:11.000Z
+            val input = java.time.LocalDateTime.parse(raw.replace("Z",""))
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yy")
+            input.format(formatter)
+        } catch (e: Exception) {
+            raw
+        }
     }
 
 }

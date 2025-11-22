@@ -56,12 +56,18 @@ class ProfileActivity : AppCompatActivity() {
     }
     private fun options() {
         val btn = findViewById<ImageButton>(R.id.id_back)
+        val btnPosts = findViewById<Button>(R.id.id_btnProfile)
         val btnDrafts = findViewById<Button>(R.id.id_btnDrafts)
         val btnConfig = findViewById<Button>(R.id.id_btnConfig)
         val btnLogout = findViewById<Button>(R.id.id_btnLogout)
 
         btn.setOnClickListener {
             finish()
+        }
+
+        btnPosts.setOnClickListener {
+            val intent = Intent(this, MyPostsActivity::class.java)
+            startActivity(intent)
         }
 
         btnDrafts.setOnClickListener {
@@ -82,12 +88,14 @@ class ProfileActivity : AppCompatActivity() {
         val db = AppDatabase.getDatabase(this)
         val userDao = db.userDaoLocal()
         val mediaDao = db.mediaDaoLocal()
-
+        val postDao = db.postDaoLocal()
         lifecycleScope.launch {
             try {
-                // Borra el usuario local
+                // Borra toda la informacion de la base de datos local
                 userDao.clearUsers()
                 mediaDao.clearMedia()
+                postDao.clearPosts()
+
                 // Notifica al usuario
                 runOnUiThread {
                     Toast.makeText(this@ProfileActivity, "Sesión cerrada correctamente", Toast.LENGTH_SHORT).show()

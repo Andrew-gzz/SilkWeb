@@ -1,29 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".presentation.ui.FeedFragment"
+    tools:context=".presentation.ui.MyPostsActivity"
     android:background="@color/primaryDark">
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical">
-        <View
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:background="@drawable/limit_line"
-            android:layout_marginTop="70dp">
-        </View>
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Más recientes"
-            android:paddingStart="18dp"
-            android:textColor="@color/primaryLight"
-            android:textSize="20sp"
-            android:textStyle="italic">
-        </TextView>
+            android:orientation="horizontal"
+            android:layout_marginTop="25dp"
+            android:paddingHorizontal="30dp">
+            <ImageButton
+                android:id="@+id/id_back"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Regresar"
+                android:src="@drawable/ic_back"
+                app:tint="@color/primaryLight" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="30dp"
+                android:text="Edita tus publicaciones"
+                android:textColor="@color/primaryLight"
+                android:textSize="20sp"
+                android:textStyle="bold">
+            </TextView>
+        </LinearLayout>
         <FrameLayout
             android:id="@+id/id_loadingContainer"
             android:layout_width="match_parent"
@@ -52,6 +64,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            tools:listitem="@layout/item_post"/>
+            tools:listitem="@layout/item_post">
+        </androidx.recyclerview.widget.RecyclerView>
     </LinearLayout>
 </FrameLayout>

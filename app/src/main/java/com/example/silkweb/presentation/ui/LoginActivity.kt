@@ -23,6 +23,7 @@ import com.example.silkweb.data.dao.ImageDao
 import com.example.silkweb.data.local.AppDatabase
 import com.example.silkweb.data.local.MediaEntity
 import com.example.silkweb.data.local.UserEntity
+import com.example.silkweb.utils.showCustomSnackbar
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
@@ -105,61 +106,17 @@ class LoginActivity : AppCompatActivity() {
         val password = etPassword.text.toString().trim()
 
         if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Por favor llena todos los campos", Toast.LENGTH_SHORT).show()
+            showCustomSnackbar("Por favor llena todos los campos")
             return
         }
         Thread {
             try {
-                /* Antiguo Login
-                val user = UserDao.loginUserSP(username, password)
-
-                if (user != "Login exitoso") {
-                    runOnUiThread {
-                        Toast.makeText(this, user, Toast.LENGTH_SHORT).show()
-                    }
-                }else{
-                    val userData = UserDao.userData(username)
-                    if (userData != null) {
-                        saveUserLocal(userData)
-
-                        // 🔹 Nuevo: obtener foto de perfil del SP
-                        val mediaData = ImageDao.getPhotoDataByUsername(username)
-                        if (mediaData != null) {
-                            val db = AppDatabase.getDatabase(this)
-                            val mediaDao = db.mediaDaoLocal()
-
-                            // Guardar el BLOB como archivo local
-                            val fileName = mediaData.fileName ?: "profile_temp.jpg"
-                            val file = File(this.filesDir, fileName)
-                            mediaData.file?.let { file.writeBytes(it) }
-
-                            // Guardar en Room
-                            val mediaEntity = MediaEntity(
-                                id = userData.idPhoto?: 0,
-                                fileName = fileName,
-                                route = file.absolutePath,
-                                localUri = file.toURI().toString()
-                            )
-                            runBlocking {
-                                mediaDao.insert(mediaEntity)
-                            }
-                        }
-                        runOnUiThread {
-                            Toast.makeText(this, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
-                            startActivity(
-                                Intent(this, MainActivity::class.java)
-                                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                            )
-                            finish()
-                        }
-                    }
-                }*/
                 Thread {
                     try {
                         val response = ApiClient.login(username, password)
                         if (response == null) {
                             runOnUiThread {
-                                Toast.makeText(this, "Error al conectar con el servidor", Toast.LENGTH_SHORT).show()
+                                showCustomSnackbar("Error al conectar con el servidor")
                             }
                             return@Thread
                         }
@@ -169,7 +126,7 @@ class LoginActivity : AppCompatActivity() {
 
                         if (!json.getBoolean("success")) {
                             runOnUiThread {
-                                Toast.makeText(this, json.getString("message"), Toast.LENGTH_SHORT).show()
+                                showCustomSnackbar(json.getString("message"))
                             }
                             return@Thread
                         }
@@ -191,7 +148,7 @@ class LoginActivity : AppCompatActivity() {
 
                         saveUserLocal(userData)
 
-                        // 🔹 Nuevo: obtener foto de perfil
+                        // obtener foto de perfil
                         val responsePhoto = ApiClient.getProfilePhoto(username)
 
                         if (responsePhoto != null) {
@@ -226,21 +183,21 @@ class LoginActivity : AppCompatActivity() {
                         }
 
                         runOnUiThread {
-                            Toast.makeText(this, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
+                            showCustomSnackbar("Inicio de sesión exitoso")
                             startActivity(Intent(this, MainActivity::class.java))
                             finish()
                         }
 
                     } catch (e: Exception) {
                         runOnUiThread {
-                            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                            showCustomSnackbar("Error: ${e.message}")
                         }
                     }
                 }.start()
 
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this, "Error 500: ${e.message}", Toast.LENGTH_LONG).show()
+                    showCustomSnackbar("Error 500: ${e.message}")
                 }
                 e.printStackTrace()
             }
@@ -257,7 +214,7 @@ class LoginActivity : AppCompatActivity() {
 
                     if (response == null) {
                         runOnUiThread {
-                            Toast.makeText(this, "Error de servidor", Toast.LENGTH_SHORT).show()
+                            showCustomSnackbar("Error de servidor")
                         }
                         return@Thread
                     }
@@ -266,19 +223,19 @@ class LoginActivity : AppCompatActivity() {
 
                     if (!json.getBoolean("success")) {
                         runOnUiThread {
-                            Toast.makeText(this, json.getString("message"), Toast.LENGTH_SHORT).show()
+                            showCustomSnackbar(json.getString("message"))
                         }
                         return@Thread
                     }
 
                     runOnUiThread {
-                        Toast.makeText(this, "Registro exitoso", Toast.LENGTH_SHORT).show()
+                        showCustomSnackbar("Registro exitoso")
                         setVisibility() // Regresar a login
                     }
 
                 } catch (e: Exception) {
                     runOnUiThread {
-                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                        showCustomSnackbar("Error: ${e.message}")
                     }
                 }
             }.start()
@@ -329,7 +286,7 @@ class LoginActivity : AppCompatActivity() {
                 direction,
             )
         }catch (e: Exception){
-            Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
+            showCustomSnackbar(e.message.toString())
             return null
         }
 

@@ -33,9 +33,21 @@ object postController {
 
         return -1
     }
+    fun updatePost(postId: Int, username: String, title: String, body: String, mediaJson: String): Boolean {
+        val response = ApiClient.updatePost(postId, username, title, body, mediaJson) ?: return false
+
+        val json = JSONObject(response)
+        return json.optBoolean("success", false)
+    }
+    /*IMPORTANTE PARA ELIMINAR POSTS*/
+    fun deletePost(postId: Int): Boolean {
+        val response = ApiClient.deletePost(postId) ?: return false
+        val json = JSONObject(response)
+        return json.optBoolean("success", false)
+    }
 
     // --- Helpers ---
-    private fun buildMediaJson(ctx: Context, uris: List<Uri>): String? {
+    fun buildMediaJson(ctx: Context, uris: List<Uri>): String? {
         if (uris.isEmpty()) return null
         val arr = JSONArray()
 
@@ -54,7 +66,7 @@ object postController {
         }
         return if (arr.length() == 0) null else arr.toString()
     }
-    private fun getFileName(ctx: Context, uri: Uri): String? {
+    fun getFileName(ctx: Context, uri: Uri): String? {
         var name: String? = null
         val cursor: Cursor? = ctx.contentResolver.query(uri, null, null, null, null)
         cursor?.use {
@@ -67,7 +79,7 @@ object postController {
     }
 
     // -- Cosas acerca de los posts --
-/* getFeed Antiguo
+    /* getFeed Antiguo
     fun getFeed(): List<PostModel> {
 
         val conn = MySqlConexion.getConexion()
@@ -149,7 +161,88 @@ object postController {
 
         return list
     }
+    fun getFeedFull(): List<PostModel> {
+        val response = ApiClient.getAllPosts() ?: return emptyList()
 
+        val json = JSONObject(response)
+        if (!json.optBoolean("success")) return emptyList()
+
+        val feedArray = json.getJSONArray("feed")
+        val list = mutableListOf<PostModel>()
+
+        for (i in 0 until feedArray.length()) {
+            val item = feedArray.getJSONObject(i)
+
+            val userPhotoBytes = item.optString("user_photo_file", null)
+                ?.takeIf { it.isNotEmpty() && it != "null" }
+                ?.let { Base64.decode(it, Base64.DEFAULT) }
+
+            val post = PostModel(
+                id = item.getInt("post_id"),
+                username = item.getString("username"),
+
+                userPhotoFile = userPhotoBytes,
+                userPhotoName = item.optString("user_photo_name", null),
+                userPhotoRoute = item.optString("user_photo_route", null),
+
+                title = item.getString("post_title"),
+                body = item.getString("post_body"),
+                createdAt = item.getString("created_at"),
+
+                mediaListJson = item.optString("media_list", null),
+
+                likeCount = item.getInt("like_count"),
+                commentCount = item.getInt("comment_count"),
+
+                mediaFiles = null
+            )
+
+            list.add(post)
+        }
+
+        return list
+    }
+    fun getMyPosts(username: String): List<PostModel> {
+        val response = ApiClient.getMyPosts(username) ?: return emptyList()
+
+        val json = JSONObject(response)
+        if (!json.optBoolean("success")) return emptyList()
+
+        val feedArray = json.getJSONArray("feed")
+        val list = mutableListOf<PostModel>()
+
+        for (i in 0 until feedArray.length()) {
+            val item = feedArray.getJSONObject(i)
+
+            val userPhotoBytes = item.optString("user_photo_file", null)
+                ?.takeIf { it.isNotEmpty() && it != "null" }
+                ?.let { Base64.decode(it, Base64.DEFAULT) }
+
+            val post = PostModel(
+                id = item.getInt("post_id"),
+                username = item.getString("username"),
+
+                userPhotoFile = userPhotoBytes,
+                userPhotoName = item.optString("user_photo_name", null),
+                userPhotoRoute = item.optString("user_photo_route", null),
+
+                title = item.getString("post_title"),
+                body = item.getString("post_body"),
+                createdAt = item.getString("created_at"),
+
+                mediaListJson = item.optString("media_list", null),
+
+                likeCount = item.getInt("like_count"),
+                commentCount = item.getInt("comment_count"),
+
+                mediaFiles = null
+            )
+
+            list.add(post)
+        }
+
+        return list
+    }
 
     /* GetPostMedia Antiguo
     fun getPostMedia(postId: Int): MutableMap<Int, ByteArray> {
@@ -202,7 +295,7 @@ object postController {
         return map
     }
 
-/*  getPostDetails Antiguo
+    /*  getPostDetails Antiguo
     fun getPostDetails(idPost: Int): PostModel? {
         val conn = MySqlConexion.getConexion()
         val sql = "SELECT * FROM vw_feed_posts WHERE post_id = ? LIMIT 1"

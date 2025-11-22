@@ -23,5 +23,9 @@ data class CommentModel(
     val body: String,
     val createdAt: String,
     val parentCommentId: Int?,   // null = comentario normal
-    val isReply: Boolean         // true = respuesta
+    val isReply: Boolean,         // true = respuesta
+    var isHidden: Boolean = false,
+    var position: Int = 0,
+    var userLiked: Boolean = false
+
 )

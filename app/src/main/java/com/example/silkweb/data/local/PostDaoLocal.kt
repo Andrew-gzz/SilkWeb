@@ -32,6 +32,7 @@ interface PostDaoLocal {
         createdAt= :createdAt
        WHERE id = :id
     """)
+
     suspend fun updatePostData(
         id: Int,
         userId: Int,
@@ -40,4 +41,23 @@ interface PostDaoLocal {
         isDraft: Boolean,
         createdAt: String
     )
+    @Query("SELECT * FROM posts WHERE isDraft = 1 ORDER BY id DESC")
+    suspend fun getDrafts(): List<PostEntity>
+    @Query("SELECT * FROM posts WHERE id = :id LIMIT 1")
+    suspend fun getDraftById(id: Int): PostEntity?
+    //---------------------------------//
+    // Modo Offline                    //
+    //---------------------------------//
+    // Obtener publicaciones pendientes por publicar
+    @Query("SELECT * FROM posts WHERE isPendingPublish = 1 ORDER BY id ASC")
+    suspend fun getPendingPosts(): List<PostEntity>
+
+    // Eliminar publicación pendiente
+    @Query("DELETE FROM posts WHERE id = :id AND isPendingPublish = 1")
+    suspend fun deletePendingPost(id: Int)
+
+    @Query("UPDATE posts SET isPendingPublish = :pending WHERE id = :id")
+    suspend fun updatePendingStatus(id: Int, pending: Boolean)
+
+
 }

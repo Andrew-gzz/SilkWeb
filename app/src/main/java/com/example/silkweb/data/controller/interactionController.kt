@@ -48,4 +48,43 @@ object interactionController { //Ya usa HTTP
             e.message ?: "Error inesperado"
         }
     }
+    fun isFavorite(username: String, postId: Int): Boolean {
+        return try {
+            val response = ApiClient.isFavorite(username, postId)
+            if (response == null) return false
+
+            val json = JSONObject(response)
+            val msg = json.optString("message", "none")
+
+            msg == "success"
+
+        } catch (e: Exception) {
+            false
+        }
+    }
+    fun isSaved(username: String, postId: Int): Boolean {
+        return try {
+            val response = ApiClient.isSaved(username, postId)
+            if (response == null) return false
+
+            val json = JSONObject(response)
+            json.optString("message") == "success"
+
+        } catch (e: Exception) {
+            false
+        }
+    }
+    fun isCommentFav(username: String, commentId: Int): Boolean {
+        return try {
+            val response = ApiClient.isCommentFav(username, commentId)
+            if (response == null) return false
+
+            val json = JSONObject(response)
+            json.optString("message") == "success"
+
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 }

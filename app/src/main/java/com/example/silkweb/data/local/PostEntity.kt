@@ -13,5 +13,6 @@ data class PostEntity(
     val title: String,
     val body: String,
     val isDraft: Boolean,
-    val createdAt: String
+    val createdAt: String,
+    val isPendingPublish: Boolean = false
 )

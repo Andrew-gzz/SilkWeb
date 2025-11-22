@@ -5,10 +5,9 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".presentation.ui.PostActivity"
+    tools:context=".presentation.ui.ModifyActivity"
     android:background="@color/primaryDark"
     android:paddingHorizontal="30dp">
-
     <ImageButton
         android:id="@+id/id_back"
         android:layout_width="48dp"
@@ -19,14 +18,13 @@
         android:src="@drawable/ic_back"
         app:tint="@color/primaryLight">
     </ImageButton>
-
     <Button
         android:id="@+id/id_btnPost"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
         android:layout_marginTop="25dp"
-        android:text="Publicar"
+        android:text="Editar"
         android:backgroundTint="@color/primary"
         android:textColor="@color/white"
         android:contentDescription="@string/btnContentPost"
@@ -121,16 +119,17 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:visibility="gone"
-
             android:layout_marginTop="8dp"
+            android:visibility="gone"
             android:layout_gravity="center_horizontal" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginTop="15dp">
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/id_btnImage"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
@@ -164,7 +163,32 @@
                 app:iconTint="@color/white"
                 app:iconGravity="textStart"
                 app:iconSize="24dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/id_btnDestroy"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:backgroundTint="@color/secondary"
+                android:padding="8dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="999dp"
+                app:icon="@drawable/ic_delete"
+                app:iconTint="@color/white"
+                app:iconSize="24dp" />
+
         </LinearLayout>
+
+
+
 
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

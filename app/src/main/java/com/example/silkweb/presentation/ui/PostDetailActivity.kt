@@ -32,6 +32,8 @@ class PostDetailActivity : AppCompatActivity() {
     private var openComments: Boolean = false       // ← Por si viene desde el botón comentarios
     private var replyToCommentId: Int? = null // ← Para responder a un comentario
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_post_detail)
@@ -143,8 +145,27 @@ class PostDetailActivity : AppCompatActivity() {
                 val mediaFiles = postController.getPostMedia(post.id)
                 post.mediaFiles = mediaFiles
 
-                // Seccion de comentarios
+                val db = AppDatabase.getDatabase(this@PostDetailActivity)
+                val user = db.userDaoLocal().getUser()
+
+                // determinar si es favorito
+                val isFav = interactionController.isFavorite(user!!.username, post.id)
+                post.userLiked = isFav
+
+                val isSaved = interactionController.isSaved(user.username, post.id)
+                post.userBookmarked = isSaved
+
+                //--------------------------------------------------------------//
+                //-------------- Seccion de eventos en comentarios--------------//
+                //--------------------------------------------------------------//
                 val comments = commentController.getComments(post.id)
+
+                val userLocal = user  //Optener usuario activo
+
+                comments.forEachIndexed { index, c -> //Buscar si el comentario es favorito
+                    c.position = index
+                    c.userLiked = interactionController.isCommentFav(userLocal.username, c.commentId)
+                }
 
                 withContext(Dispatchers.Main) {
                     rvComments.adapter = CommentAdapter(
@@ -166,12 +187,45 @@ class PostDetailActivity : AppCompatActivity() {
                                 rvComments.smoothScrollToPosition(comments.size - 1)
                             }
                         },
-                        onLikeCommentClick = { comment ->
+                        onLikeCommentClick = { comment, pos ->
 
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                try {
+                                    val db = AppDatabase.getDatabase(this@PostDetailActivity)
+                                    val user = db.userDaoLocal().getUser()
+
+                                    if (user == null) {
+                                        withContext(Dispatchers.Main) {
+                                            Toast.makeText(this@PostDetailActivity, "Usuario no encontrado", Toast.LENGTH_SHORT).show()
+                                        }
+                                        return@launch
+                                    }
+
+                                    val data = InteractionModel(
+                                        idPost = comment.postId,
+                                        username = user.username,
+                                        idComment = comment.commentId,
+                                        type = 1
+                                    )
+
+                                    val message = interactionController.interact(data)
+
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(this@PostDetailActivity, message, Toast.LENGTH_SHORT).show()
+                                    }
+
+                                } catch (e: Exception) {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(this@PostDetailActivity, "${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
                         }
                     )
                 }
-
+                //--------------------------------------------------------------//
+                //-------------- Seccion de eventos en publicación--------------//
+                //--------------------------------------------------------------//
                 withContext(Dispatchers.Main) {
                     rvPost.adapter = FeedAdapter(
                         posts = listOf(post),
@@ -295,9 +349,35 @@ class PostDetailActivity : AppCompatActivity() {
                     etComment.setText("@${comment.username} ")
                     etComment.requestFocus()
                 },
-                onLikeCommentClick = { comment ->
-                    // like comentario
+                onLikeCommentClick = { c, pos ->
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            val db = AppDatabase.getDatabase(this@PostDetailActivity)
+                            val user = db.userDaoLocal().getUser()
+
+                            val data = InteractionModel(
+                                idPost = postId,
+                                username = user!!.username,
+                                idComment = c.commentId,
+                                type = 1
+                            )
+
+                            val msg = interactionController.interact(data)
+
+                            withContext(Dispatchers.Main) {
+                                c.userLiked = !c.userLiked
+                                rvComments.adapter?.notifyItemChanged(pos)
+                                Toast.makeText(this@PostDetailActivity, msg, Toast.LENGTH_SHORT).show()
+                            }
+
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@PostDetailActivity, e.message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 }
+
             )
         }
     }

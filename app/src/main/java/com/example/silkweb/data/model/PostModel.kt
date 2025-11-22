@@ -7,6 +7,7 @@ data class CreatePostModel(
     val status: Int = 1
 )
 
+
 data class PostModel(
     val id: Int,
     val username: String,
@@ -23,5 +24,8 @@ data class PostModel(
     val likeCount: Int,
     val commentCount: Int,
 
-    var mediaFiles: MutableMap<Int, ByteArray>? = null
+    var mediaFiles: MutableMap<Int, ByteArray>? = null,
+    var userLiked: Boolean = false,
+    var userBookmarked: Boolean = false
+
 )

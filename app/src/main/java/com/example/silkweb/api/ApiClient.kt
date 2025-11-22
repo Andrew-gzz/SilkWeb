@@ -182,10 +182,64 @@ object ApiClient {
             return response.body?.string()
         }
     }
+    fun updatePost(postId: Int, username: String, title: String, body: String, mediaJson: String): String? {
+        val json = """
+        {
+            "postId": $postId,
+            "username": "$username",
+            "title": "$title",
+            "body": "$body",
+            "media_json": $mediaJson
+        }
+    """.trimIndent()
+
+        val bodyReq = json.toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url("${ApiConfig.BASE_URL}/posts/modify")
+            .post(bodyReq)
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            return response.body?.string()
+        }
+    }
+
     fun get(url: String): String? {
         val request = Request.Builder()
             .url(url)
             .get()
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            return response.body?.string()
+        }
+    }
+    fun getAllPosts(): String? {
+        val request = Request.Builder()
+            .url("${ApiConfig.BASE_URL}/posts/feed/full")
+            .get()
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            return response.body?.string()
+        }
+    }
+    fun getMyPosts(username: String): String? {
+        val request = Request.Builder()
+            .url("${ApiConfig.BASE_URL}/posts/feed/mine/$username")
+            .get()
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            return response.body?.string()
+        }
+    }
+    /*IMPORTATE PARA ELIMINAR POSTS*/
+    fun deletePost(postId: Int): String? {
+        val request = Request.Builder()
+            .url("${ApiConfig.BASE_URL}/posts/$postId")
+            .delete() // DELETE sin body
             .build()
 
         client.newCall(request).execute().use { response ->
@@ -217,10 +271,49 @@ object ApiClient {
             return response.body?.string()
         }
     }
+    fun isFavorite(username: String, postId: Int): String? {
+        val json = """
+        {
+            "username": "$username",
+            "postId": $postId
+        }
+    """.trimIndent()
 
-    //------------------------//
-    //         Comments       //
-    //------------------------//
+        val body = json.toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url("$BASE_URL/interact/isFavorite")
+            .post(body)
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            return response.body?.string()
+        }
+    }
+    fun isSaved(username: String, postId: Int): String? {
+        val json = """
+        {
+            "username": "$username",
+            "postId": $postId
+        }
+    """.trimIndent()
+
+        val body = json.toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url("$BASE_URL/interact/isSaved")
+            .post(body)
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            return response.body?.string()
+        }
+    }
+
+
+    //----------------------------//
+    //         Commentarios       //
+    //----------------------------//
     fun post(endpoint: String, json: String): String? {
         val body = json.toRequestBody("application/json".toMediaType())
 
@@ -233,5 +326,25 @@ object ApiClient {
             return response.body?.string()
         }
     }
+    fun isCommentFav(username: String, commentId: Int): String? {
+        val json = """
+        {
+            "username": "$username",
+            "commentId": $commentId
+        }
+    """.trimIndent()
+
+        val body = json.toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url("$BASE_URL/interact/isCommentFav")
+            .post(body)
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            return response.body?.string()
+        }
+    }
+
 
 }
