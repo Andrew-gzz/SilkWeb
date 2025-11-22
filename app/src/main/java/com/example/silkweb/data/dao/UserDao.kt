@@ -1,87 +1,16 @@
 package com.example.silkweb.data.dao
 
+import com.example.silkweb.data.model.UserDataForUpdate
 import com.example.silkweb.data.model.UserLogin
 import com.example.silkweb.data.model.UserModel
 import com.example.silkweb.data.model.UserRegister
+import java.sql.CallableStatement
+import java.sql.Connection
+import java.sql.ResultSet
+import java.sql.SQLException
 
 
 object UserDao {
-
-    fun loginUser(user: String, password: String): UserModel? {
-        val conn = MySqlConexion.getConexion()
-        val sql = "SELECT id, username, password FROM users WHERE username = ? OR email = ?"
-        val ps = conn.prepareStatement(sql)
-
-        ps.setString(1, user)
-        ps.setString(2, user)
-        val rs = ps.executeQuery()
-
-        var user: UserModel? = null
-
-        if (rs.next()) {
-            val dbPassword = rs.getString("password")
-
-            // Validar contraseña
-            if (dbPassword == password) {
-                user = UserModel(
-                    rs.getInt("id"),
-                    null,   // idPhoto
-                    "",     // name
-                    "",     // lastname
-                    rs.getString("username"),
-                    "",     // email
-                    dbPassword,
-                    null,   // phone
-                    null,   // direction
-                    "",     // createdAt
-                    null    // updatedAt
-                )
-            } else {
-                // Contraseña incorrecta → retorna null
-                user = null
-            }
-        }
-
-        rs.close()
-        ps.close()
-        conn.close()
-
-        return user
-    }
-
-    fun listar(dato: String): List<UserModel>{
-        val lista = mutableListOf<UserModel>()
-        val ps = MySqlConexion.getConexion().prepareStatement(
-            "SELECT id, username, password FROM users WHERE username LIKE ? OR password LIKE concat('%',?,'%');"
-        )
-
-        ps.setString(1, dato)
-
-        val rs = ps.executeQuery()
-
-        while (rs.next()){
-            lista.add(
-                UserModel(
-                    rs.getInt("id"),
-                    null,
-                    "",
-                    "",
-                    rs.getString("username"),
-                    "",
-                    rs.getString("password"),
-                    null,
-                    null,
-                    "",
-                    null
-                )
-            )
-        }
-
-        rs.close()
-        ps.close()
-
-        return lista
-    }
 
     fun registrar(user: UserRegister) {
         val conn = MySqlConexion.getConexion()
@@ -106,126 +35,6 @@ object UserDao {
         ps.executeUpdate()
         ps.close()
         conn.close()
-    }
-
-    fun checkUserExists(username:String): UserModel? {
-        val conn = MySqlConexion.getConexion()
-        val sql = "SELECT id, username FROM users WHERE username = ?"
-        val ps = conn.prepareStatement(sql)
-
-        ps.setString(1, username)
-        val rs = ps.executeQuery()
-        var user: UserModel? = null
-
-        if (rs.next()) {
-            val dbUser = rs.getString("username")
-
-            // Validar si existe un usuario con ese nombre
-             if(dbUser == username){
-                user = UserModel(
-                    rs.getInt("id"),
-                    null,   // idPhoto
-                    "",     // name
-                    "",     // lastname
-                    dbUser,
-                    "",     // email
-                    "",
-                    null,   // phone
-                    null,   // direction
-                    "",     // createdAt
-                    null    // updatedAt
-                )
-            }else{
-                user = null
-            }
-        }
-
-        rs.close()
-        ps.close()
-        conn.close()
-
-        return user
-    }
-
-    fun checkEmailExists(email:String): UserModel? {
-        val conn = MySqlConexion.getConexion()
-        val sql = "SELECT id, email FROM users WHERE email = ?"
-        val ps = conn.prepareStatement(sql)
-
-        ps.setString(1, email)
-        val rs = ps.executeQuery()
-        var user: UserModel? = null
-
-        if (rs.next()) {
-            val dbEmail = rs.getString("email")
-
-            // Validar si existe un usuario con ese nombre
-            if(dbEmail == email){
-                user = UserModel(
-                    rs.getInt("id"),
-                    null,   // idPhoto
-                    "",     // name
-                    "",     // lastname
-                    "",
-                    dbEmail,     // email
-                    "",
-                    null,   // phone
-                    null,   // direction
-                    "",     // createdAt
-                    null    // updatedAt
-                )
-            }else{
-                user = null
-            }
-        }
-
-        rs.close()
-        ps.close()
-        conn.close()
-
-        return user
-    }
-
-    fun checkFullNameExists(name:String, lastname:String): UserModel? {
-        val conn = MySqlConexion.getConexion()
-        val sql = "SELECT id, name, lastname FROM users WHERE name = ? AND lastname = ?"
-        val ps = conn.prepareStatement(sql)
-
-        ps.setString(1, name)
-        ps.setString(2, lastname)
-
-        val rs = ps.executeQuery()
-        var user: UserModel? = null
-
-        if (rs.next()) {
-            val dbname = rs.getString("name")
-            val dblastname = rs.getString("lastname")
-
-            // Validar si existe un usuario con ese nombre
-            if(dbname == name && dblastname == lastname){
-                user = UserModel(
-                    rs.getInt("id"),
-                    null,   // idPhoto
-                    dbname,     // name
-                    dblastname,     // lastname
-                    "",
-                    "",     // email
-                    "",
-                    null,   // phone
-                    null,   // direction
-                    "",     // createdAt
-                    null    // updatedAt
-                )
-            }else{
-                user = null
-            }
-        }
-
-        rs.close()
-        ps.close()
-        conn.close()
-
-        return user
     }
 
     fun userData(username: String): UserLogin? {
@@ -271,4 +80,129 @@ object UserDao {
 
         return user
     }
+
+    fun loginUserSP(user: String, password: String): String {
+        val conn = MySqlConexion.getConexion()
+        val call = conn.prepareCall("{ CALL sp_login_user(?, ?) }")
+        call.setString(1, user)
+        call.setString(2, password)
+
+        val rs = call.executeQuery()
+        var message = "Error al ejecutar el procedimiento"
+
+        if (rs.next()) {
+            message = rs.getString("message")
+        }
+
+        rs.close()
+        call.close()
+        conn.close()
+
+        return message
+    }
+
+    fun modUserSP(user: UserDataForUpdate): String {
+        var message = "Error desconocido al actualizar el usuario"
+        var conn: Connection? = null
+        var call: CallableStatement? = null
+        var rs: ResultSet? = null
+
+        try {
+            conn = MySqlConexion.getConexion()
+            call = conn.prepareCall("{ CALL sp_update_user_data(?,?,?,?,?,?,?,?) }")
+
+            call.setString(1, user.username)
+            call.setString(2, user.name)
+            call.setString(3, user.lastname)
+            call.setString(4, null)
+            call.setString(5, user.phone)
+            call.setString(6, user.direction)
+            call.setString(7, user.password)
+            call.setString(8, user.newUsername)
+
+            rs = call.executeQuery()
+
+            if (rs.next()) {
+                message = rs.getString("message")
+            } else {
+                message = "El procedimiento no devolvió ningún resultado"
+            }
+
+        } catch (e: SQLException) {
+            e.printStackTrace()
+            message = "❌ Error SQL: ${e.message}"
+        } catch (e: Exception) {
+            e.printStackTrace()
+            message = "⚠️ Error general: ${e.message}"
+        } finally {
+            try {
+                rs?.close()
+                call?.close()
+                conn?.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                message = "⚠️ Error al cerrar la conexión: ${e.message}"
+            }
+        }
+
+        return message
+    }
+
+    //Validaciones
+    fun checkUserExistsSP(username:String): String {
+        val conn = MySqlConexion.getConexion()
+        val call = conn.prepareCall("{ CALL sp_check_username(?) }")
+        call.setString(1, username)
+
+        val rs = call.executeQuery()
+        var message = "Error al ejecutar el procedimiento"
+
+        if (rs.next()) {
+            message = rs.getString("message")
+        }
+
+        rs.close()
+        call.close()
+        conn.close()
+
+        return message
+    }
+    fun checkEmailExistsSP(email:String): String {
+        val conn = MySqlConexion.getConexion()
+        val call = conn.prepareCall("{ CALL sp_check_email(?) }")
+        call.setString(1, email)
+
+        val rs = call.executeQuery()
+        var message = "Error al ejecutar el procedimiento"
+
+        if (rs.next()) {
+            message = rs.getString("message")
+        }
+
+        rs.close()
+        call.close()
+        conn.close()
+
+        return message
+    }
+    fun checkFullNameExistsSP(name:String, lastname:String): String {
+        val conn = MySqlConexion.getConexion()
+        val call = conn.prepareCall("{ CALL sp_check_fullname(?,?) }")
+        call.setString(1, name)
+        call.setString(2, lastname)
+
+        val rs = call.executeQuery()
+        var message = "Error al ejecutar el procedimiento"
+
+        if (rs.next()) {
+            message = rs.getString("message")
+        }
+
+        rs.close()
+        call.close()
+        conn.close()
+
+        return message
+    }
+
 }

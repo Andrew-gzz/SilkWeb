@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".presentation.ui.ModifyActivity"
+    android:background="@color/primaryDark"
+    android:paddingHorizontal="30dp">
+    <ImageButton
+        android:id="@+id/id_back"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="25dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/btnImgBtnClose"
+        android:src="@drawable/ic_back"
+        app:tint="@color/primaryLight">
+    </ImageButton>
+    <Button
+        android:id="@+id/id_btnPost"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="25dp"
+        android:text="Editar"
+        android:backgroundTint="@color/primary"
+        android:textColor="@color/white"
+        android:contentDescription="@string/btnContentPost"
+        android:textSize="15sp">
+    </Button>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="75dp"
+        android:paddingHorizontal="20dp"
+        android:orientation="horizontal">
+        <ImageView
+            android:id="@+id/id_ivProfileImage"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_gravity="top|center"
+            android:background="@drawable/circle_mask"
+            android:clipToOutline="true"
+            android:contentDescription="@string/PhotoDescription"
+            android:scaleType="centerCrop"
+            android:src="@drawable/silkweb">
+        </ImageView>
+        <TextView
+            android:id="@+id/id_tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:paddingHorizontal="15dp"
+            android:text="@string/app_name"
+            android:textSize="20sp">
+        </TextView>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="145dp"
+        android:paddingHorizontal="20dp"
+        android:orientation="vertical">
+        <EditText
+            android:id="@+id/id_etTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/etTitle"
+            android:textColor="@color/black"
+            android:textColorHint="@color/grey"
+            android:background="@drawable/edittext_rounded"
+            android:inputType="text"
+            android:autofillHints="string"
+            android:maxLength="55"
+            android:imeOptions="flagNoEnterAction"
+            android:maxLines="1">
+        </EditText>
+        <EditText
+            android:id="@+id/id_etDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="@string/etDescription"
+            android:gravity="start"
+            android:textColor="@color/black"
+            android:textColorHint="@color/grey"
+            android:background="@drawable/edittext_rounded"
+            android:inputType="textMultiLine"
+            android:maxLength="255"
+            android:autofillHints="string"
+            android:imeOptions="flagNoEnterAction"
+            android:maxLines="8">
+        </EditText>
+        <!-- Carrusel de imágenes -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardViewImages"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="15dp"
+            android:visibility="gone"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/viewPagerImages"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:clipChildren="false"
+                android:overScrollMode="never" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Puntos debajo del carrusel -->
+        <LinearLayout
+            android:id="@+id/llDots"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"
+            android:layout_gravity="center_horizontal" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="15dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/id_btnImage"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:backgroundTint="@color/primary"
+                android:paddingStart="20dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="999dp"
+                app:icon="@drawable/ic_image"
+                app:iconTint="@color/white"
+                app:iconGravity="textStart"
+                app:iconSize="24dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/id_btnAddPhoto"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="10dp"
+                android:backgroundTint="@color/primary"
+                android:paddingStart="20dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="999dp"
+                app:icon="@drawable/ic_take_photo"
+                app:iconTint="@color/white"
+                app:iconGravity="textStart"
+                app:iconSize="24dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/id_btnDestroy"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:backgroundTint="@color/secondary"
+                android:padding="8dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="999dp"
+                app:icon="@drawable/ic_delete"
+                app:iconTint="@color/white"
+                app:iconSize="24dp" />
+
+        </LinearLayout>
+
+
+
+
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -26,8 +26,9 @@
     <string name="btnContentPost">Botón de Publicar</string>
     <!-- Search Fragment -->
     <string name="PlaceholderSearch">Buscar</string>
-    <!-- Favorite Fragment -->
+    <!-- Saved Fragment -->
     <string name="FragmentTileFavorite">Favoritos</string>
+    <string name="FragmentTileSaved">Guardados</string>
     <string name="btnTextFilter">Filtrar</string>
     <!-- Draft Activity -->
     <string name="FragmentTileDraft">Borradores</string>

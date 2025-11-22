@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "544898796541",
+    "project_id": "silkweb-d0ba5",
+    "storage_bucket": "silkweb-d0ba5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544898796541:android:b319ba4ceb2b11ee1be794",
+        "android_client_info": {
+          "package_name": "com.example.silkweb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2ajMI2NH6ib6R11OTRkB1nKAJlZVubKk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

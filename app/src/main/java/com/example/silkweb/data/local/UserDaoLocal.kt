@@ -17,4 +17,28 @@ interface UserDaoLocal {
     @Query("DELETE FROM users")
     suspend fun clearUsers()
 
+    @Query("""
+        UPDATE users SET 
+            name = :name,
+            lastName = :lastName,
+            username = :username,
+            email = :email,
+            password = :password,
+            phone = :phone,
+            direction = :direction
+        WHERE id = :id
+    """)
+    suspend fun updateUserData(
+        id: Int,
+        name: String?,
+        lastName: String?,
+        username: String,
+        email: String,
+        password: String,
+        phone: String?,
+        direction: String?
+    )
+    @Query("UPDATE users SET idPhoto = :idPhoto WHERE id = :id")
+    suspend fun updateUserPhoto(id: Int, idPhoto: Int)
+
 }

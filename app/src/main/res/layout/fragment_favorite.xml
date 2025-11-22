@@ -19,7 +19,7 @@
            <TextView
                android:layout_width="match_parent"
                android:layout_height="wrap_content"
-               android:text="@string/FragmentTileFavorite"
+               android:text="@string/FragmentTileSaved"
                android:gravity="center"
                android:textColor="@color/primaryLight"
                android:textSize="20sp"
@@ -33,7 +33,7 @@
             android:orientation="horizontal"
             android:paddingHorizontal="18dp">
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/id_btnImage"
+                android:id="@+id/id_btnFilter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/ic_filter"
@@ -44,6 +44,29 @@
                 android:textColor="@color/primaryLight">
             </com.google.android.material.button.MaterialButton>
         </LinearLayout>
+        <FrameLayout
+            android:id="@+id/id_loadingContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:background="@android:color/transparent">
+
+            <ImageView
+                android:id="@+id/id_ivLoading"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_loading"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/id_ivOffline"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_offline"
+                android:visibility="gone" />
+        </FrameLayout>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/id_recyclerFeed"
             android:layout_width="match_parent"
